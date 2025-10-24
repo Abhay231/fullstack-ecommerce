@@ -1,0 +1,198 @@
+service: ecommerce-backend
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+  stage: ${opt:stage, 'dev'}
+  timeout: 30
+  deploymentBucket:
+    name: ecommerce-backend-dev-deployment-bucket
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    MONGODB_URI: 'mongodb+srv://abhayg:abhayg@cluster0.xhfggiz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
+    JWT_SECRET: 'your_jwt_secret_key_here_for_production'
+    REDIS_DISABLED: 'true'
+    STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY, 'your_stripe_secret_key_here'}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource: "*"
+
+plugins: []
+
+functions:
+  # Auth Service
+  authRegister:
+    handler: services/auth/handler.register
+    events:
+      - http:
+          path: /auth/register
+          method: post
+          cors: true
+  
+  authLogin:
+    handler: services/auth/handler.login
+    events:
+      - http:
+          path: /auth/login
+          method: post
+          cors: true
+  
+  authProfile:
+    handler: services/auth/handler.getProfile
+    events:
+      - http:
+          path: /auth/profile
+          method: get
+          cors: true
+
+  # Product Service
+  getProducts:
+    handler: services/products/handler.getProducts
+    events:
+      - http:
+          path: /products
+          method: get
+          cors: true
+  
+  getProduct:
+    handler: services/products/handler.getProduct
+    events:
+      - http:
+          path: /products/{id}
+          method: get
+          cors: true
+  
+  createProduct:
+    handler: services/products/handler.createProduct
+    events:
+      - http:
+          path: /products
+          method: post
+          cors: true
+  
+  updateProduct:
+    handler: services/products/handler.updateProduct
+    events:
+      - http:
+          path: /products/{id}
+          method: put
+          cors: true
+  
+  deleteProduct:
+    handler: services/products/handler.deleteProduct
+    events:
+      - http:
+          path: /products/{id}
+          method: delete
+          cors: true
+
+  # Cart Service
+  getCart:
+    handler: services/cart/handler.getCart
+    events:
+      - http:
+          path: /cart/{userId}
+          method: get
+          cors: true
+  
+  addToCart:
+    handler: services/cart/handler.addToCart
+    events:
+      - http:
+          path: /cart/add
+          method: post
+          cors: true
+  
+  updateCartItem:
+    handler: services/cart/handler.updateCartItem
+    events:
+      - http:
+          path: /cart/update
+          method: put
+          cors: true
+  
+  removeFromCart:
+    handler: services/cart/handler.removeFromCart
+    events:
+      - http:
+          path: /cart/remove
+          method: delete
+          cors: true
+
+  clearCart:
+    handler: services/cart/handler.clearCart
+    events:
+      - http:
+          path: /cart/clear
+          method: delete
+          cors: true
+
+  # Order Service
+  createOrder:
+    handler: services/orders/handler.createOrder
+    events:
+      - http:
+          path: /orders
+          method: post
+          cors: true
+  
+  getOrders:
+    handler: services/orders/handler.getOrders
+    events:
+      - http:
+          path: /orders
+          method: get
+          cors: true
+      - http:
+          path: /orders/user/{userId}
+          method: get
+          cors: true
+  
+  getOrder:
+    handler: services/orders/handler.getOrder
+    events:
+      - http:
+          path: /orders/details/{orderId}
+          method: get
+          cors: true
+  
+  updateOrderStatus:
+    handler: services/orders/handler.updateOrderStatus
+    events:
+      - http:
+          path: /orders/details/{orderId}/status
+          method: put
+          cors: true
+
+  # Payment Service
+  createPaymentIntent:
+    handler: services/payments/handler.createPaymentIntent
+    events:
+      - http:
+          path: /payments/create-intent
+          method: post
+          cors: true
+  
+  confirmPayment:
+    handler: services/payments/handler.confirmPayment
+    events:
+      - http:
+          path: /payments/confirm
+          method: post
+          cors: true
+
+custom:
+  serverless-offline:
+    httpPort: 3001
