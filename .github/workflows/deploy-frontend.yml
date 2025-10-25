@@ -54,6 +54,7 @@ jobs:
         REACT_APP_APP_NAME: EcomStore
         REACT_APP_VERSION: 1.0.0
         GENERATE_SOURCEMAP: false
+        CI: false
         
     # Upload build artifacts for deployment job
     - name: Upload build artifacts
