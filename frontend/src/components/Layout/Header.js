@@ -54,7 +54,7 @@ const Header = () => {
               className="text-2xl font-bold text-blue-600 hover:text-blue-700 transition-colors"
               onClick={() => dispatch(closeMobileMenu())}
             >
-              EcomStore v2.0
+              EcomStore v2.1
             </Link>
           </div>
 
