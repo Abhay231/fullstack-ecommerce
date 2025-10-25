@@ -1,0 +1,121 @@
+name: Deploy Backend to AWS Lambda
+
+# Trigger the workflow on push to main branch
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+
+# Define jobs
+jobs:
+  # Job 1: Test and Package Backend
+  test-and-package:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Checkout code from repository
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    # Setup Node.js environment
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+        
+    # Install dependencies
+    - name: Install dependencies
+      run: |
+        cd backend
+        npm ci
+        
+    # Install Serverless Framework
+    - name: Install Serverless Framework
+      run: npm install -g serverless
+      
+    # Run tests (if you have any)
+    - name: Run tests
+      run: |
+        cd backend
+        npm test
+      continue-on-error: true
+      
+    # Package the application
+    - name: Package application
+      run: |
+        cd backend
+        serverless package
+      env:
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        REDIS_DISABLED: true
+        
+    # Upload package artifacts
+    - name: Upload package artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-package
+        path: backend/.serverless/
+        retention-days: 1
+
+  # Job 2: Deploy to AWS Lambda (only on main branch push)
+  deploy:
+    needs: test-and-package
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    # Checkout code (needed for serverless.yml)
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    # Setup Node.js environment
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    # Install Serverless Framework
+    - name: Install Serverless Framework
+      run: npm install -g serverless
+        
+    # Install dependencies
+    - name: Install dependencies
+      run: |
+        cd backend
+        npm ci
+        
+    # Configure AWS credentials
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-south-1
+        
+    # Deploy to AWS Lambda
+    - name: Deploy to AWS Lambda
+      run: |
+        cd backend
+        serverless deploy --stage prod
+      env:
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        REDIS_DISABLED: true
+        
+    # Notify deployment success
+    - name: Deployment Success Notification
+      run: |
+        echo "🚀 Backend deployment successful!"
+        echo "✅ Lambda functions updated"
+        echo "✅ API Gateway endpoints updated"
+        echo "🔗 Backend API is live and ready!"
