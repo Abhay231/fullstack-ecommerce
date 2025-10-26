@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Header from './Header';
 import Footer from './Footer';
 import { loadUser } from '../../store/slices/authSlice';
@@ -8,6 +8,7 @@ import { fetchCart } from '../../store/slices/cartSlice';
 
 const Layout = () => {
   const dispatch = useDispatch();
+  const { isAuthenticated, isLoading: authLoading } = useSelector(state => state.auth);
 
   useEffect(() => {
     // Load user on app start if token exists
@@ -18,9 +19,11 @@ const Layout = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    // Fetch cart for both authenticated and guest users
-    dispatch(fetchCart());
-  }, [dispatch]);
+    // Fetch cart only after auth state is determined
+    if (!authLoading) {
+      dispatch(fetchCart());
+    }
+  }, [dispatch, authLoading]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">

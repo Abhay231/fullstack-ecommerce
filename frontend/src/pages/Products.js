@@ -44,13 +44,24 @@ const Products = () => {
   };
 
   const handleAddToCart = (product) => {
+    console.log('🛒 PRODUCTS - Adding to cart:', {
+      product: {
+        id: product._id,
+        name: product.name,
+        price: product.price
+      }
+    });
+    
     dispatch(addToCart({
       productId: product._id,
       quantity: 1,
-      price: product.price
-    })).then(() => {
+      selectedVariants: {} // Add this to match the expected format
+    })).then((result) => {
+      console.log('🛒 PRODUCTS - Add to cart result:', result);
       // Refetch cart to update counter
       dispatch(fetchCart());
+    }).catch((error) => {
+      console.error('🛒 PRODUCTS - Add to cart error:', error);
     });
   };
 

@@ -9,7 +9,7 @@ const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { items, totalItems, totalPrice, isLoading, error } = useSelector(state => state.cart);
-  const { isAuthenticated } = useSelector(state => state.auth);
+  const { isAuthenticated, user } = useSelector(state => state.auth);
   
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
@@ -18,6 +18,11 @@ const Cart = () => {
   useEffect(() => {
     dispatch(fetchCart());
   }, [dispatch]);
+
+  // Refetch cart when authentication state changes
+  useEffect(() => {
+    dispatch(fetchCart());
+  }, [dispatch, isAuthenticated, user]);
 
   const handleQuantityChange = (productId, newQuantity, selectedVariants) => {
     if (newQuantity <= 0) {

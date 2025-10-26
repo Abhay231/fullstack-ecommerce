@@ -179,8 +179,9 @@ const CheckoutForm = () => {
     setError('');
     
     try {
-      // Create payment intent now that we have valid shipping info
-      await createPaymentIntent();
+      // Don't create order yet, just move to payment step
+      // Order will be created after successful payment
+      console.log('🛒 CHECKOUT - Moving to payment step, cart still intact');
       setStep(2);
     } catch (err) {
       setError('Failed to proceed to payment. Please try again.');
@@ -196,111 +197,173 @@ const CheckoutForm = () => {
       return;
     }
 
-    console.log('=== FRONTEND PAYMENT DEBUG ===');
-    console.log('1. Starting payment process');
-    console.log('2. Client Secret:', clientSecret);
-    console.log('3. Order ID:', orderId);
-    console.log('4. User token exists:', !!localStorage.getItem('token'));
-    console.log('5. API URL:', process.env.REACT_APP_API_URL);
+    console.log('=== PAYMENT PROCESS STARTING ===');
+    console.log('1. Cart items before order creation:', items);
+    console.log('2. Shipping info:', shippingInfo);
 
     setLoading(true);
     setError('');
 
-    const cardElement = elements.getElement(CardElement);
+    try {
+      // Step 1: Create the order and payment intent first
+      console.log('3. Creating order and payment intent...');
+      
+      const orderResponse = await fetch(`${process.env.REACT_APP_API_URL}/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          items: items.map(item => ({
+            product: item.product._id,
+            quantity: item.quantity,
+            price: item.price,
+            selectedVariants: item.selectedVariants || {}
+          })),
+          shippingAddress: {
+            name: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
+            street: shippingInfo.address,
+            city: shippingInfo.city,
+            state: shippingInfo.state,
+            zipCode: shippingInfo.zipCode,
+            country: shippingInfo.country || 'US',
+            phone: shippingInfo.phone
+          },
+          billingAddress: billingInfo.sameAsShipping ? {
+            name: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
+            street: shippingInfo.address,
+            city: shippingInfo.city,
+            state: shippingInfo.state,
+            zipCode: shippingInfo.zipCode,
+            country: shippingInfo.country || 'US',
+            phone: shippingInfo.phone
+          } : {
+            name: `${billingInfo.firstName} ${billingInfo.lastName}`,
+            street: billingInfo.address,
+            city: billingInfo.city,
+            state: billingInfo.state,
+            zipCode: billingInfo.zipCode,
+            country: billingInfo.country || 'US'
+          },
+          orderSummary: {
+            subtotal: totalPrice,
+            tax: totalPrice * 0.08,
+            shipping: totalPrice >= 50 ? 0 : 9.99,
+            total: totalPrice + (totalPrice * 0.08) + (totalPrice >= 50 ? 0 : 9.99)
+          }
+        }),
+      });
 
-    // Confirm payment
-    console.log('6. Confirming payment with Stripe...');
-    const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: {
-        card: cardElement,
-        billing_details: {
-          name: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
-          email: shippingInfo.email,
-          address: {
-            line1: billingInfo.sameAsShipping ? shippingInfo.address : billingInfo.address,
-            city: billingInfo.sameAsShipping ? shippingInfo.city : billingInfo.city,
-            state: billingInfo.sameAsShipping ? shippingInfo.state : billingInfo.state,
-            postal_code: billingInfo.sameAsShipping ? shippingInfo.zipCode : billingInfo.zipCode,
-            country: billingInfo.sameAsShipping ? shippingInfo.country : billingInfo.country,
+      const orderData = await orderResponse.json();
+      if (!orderData.success) {
+        throw new Error(orderData.message || 'Failed to create order');
+      }
+
+      console.log('4. Order created successfully:', orderData.data._id);
+      setOrderId(orderData.data._id);
+
+      // Step 2: Create payment intent for the order
+      const paymentResponse = await fetch(`${process.env.REACT_APP_API_URL}/payments/create-intent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          orderId: orderData.data._id
+        })
+      });
+
+      const paymentData = await paymentResponse.json();
+      if (!paymentData.success) {
+        throw new Error(paymentData.message || 'Failed to create payment intent');
+      }
+
+      console.log('5. Payment intent response:', paymentData.data);
+      const currentClientSecret = paymentData.data.paymentIntent.client_secret;
+      console.log('5a. Client secret:', currentClientSecret);
+
+      if (!currentClientSecret) {
+        throw new Error('No client secret received from payment service');
+      }
+
+      // Step 3: Process the payment with Stripe
+      const cardElement = elements.getElement(CardElement);
+
+      console.log('6. Processing payment with Stripe...');
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(currentClientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            name: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
+            email: shippingInfo.email,
+            address: {
+              line1: billingInfo.sameAsShipping ? shippingInfo.address : billingInfo.address,
+              city: billingInfo.sameAsShipping ? shippingInfo.city : billingInfo.city,
+              state: billingInfo.sameAsShipping ? shippingInfo.state : billingInfo.state,
+              postal_code: billingInfo.sameAsShipping ? shippingInfo.zipCode : billingInfo.zipCode,
+              country: billingInfo.sameAsShipping ? shippingInfo.country : billingInfo.country,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (stripeError) {
-      console.log('7. Stripe error:', stripeError);
-      setError(stripeError.message);
-      setLoading(false);
-      return;
-    }
-
-    console.log('8. Payment intent result:', {
-      id: paymentIntent.id,
-      status: paymentIntent.status,
-      amount: paymentIntent.amount
-    });
-
-    if (paymentIntent.status === 'succeeded') {
-      console.log('9. Payment succeeded, confirming with backend...');
-      
-      // Confirm payment on backend
-      try {
-        const confirmPayload = {
-          paymentIntentId: paymentIntent.id
-        };
-        
-        console.log('10. Sending confirmation request:', {
-          url: `${process.env.REACT_APP_API_URL}/payments/confirm`,
-          method: 'POST',
-          payload: confirmPayload,
-          hasToken: !!localStorage.getItem('token')
-        });
-
-        const confirmResponse = await fetch(`${process.env.REACT_APP_API_URL}/payments/confirm`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify(confirmPayload),
-        });
-
-        console.log('11. Confirmation response status:', confirmResponse.status);
-        console.log('12. Confirmation response ok:', confirmResponse.ok);
-
-        const confirmData = await confirmResponse.json();
-        console.log('13. Confirmation response data:', confirmData);
-
-        if (confirmData.success) {
-          console.log('14. Payment confirmation successful!');
-          setSuccess(true);
-          setStep(3);
-          
-          // Refresh cart to reflect the cleared cart from backend
-          dispatch(fetchCart());
-          
-          // Redirect to order confirmation after a delay
-          setTimeout(() => {
-            navigate(`/orders/${confirmData.data.order.id}`);
-          }, 2000);
-        } else {
-          console.log('15. Payment confirmation failed:', confirmData.message);
-          throw new Error(confirmData.message || 'Payment confirmation failed');
-        }
-      } catch (err) {
-        console.error('16. Payment confirmation error:', err);
-        console.error('17. Error details:', {
-          name: err.name,
-          message: err.message,
-          stack: err.stack
-        });
-        setError('Payment was processed but confirmation failed. Please contact support.');
+      if (stripeError) {
+        console.log('7. Stripe payment error:', stripeError);
+        setError(stripeError.message);
+        setLoading(false);
+        return;
       }
-    } else {
-      setError('Payment was not completed successfully');
-    }
 
-    setLoading(false);
+      console.log('8. Payment successful:', {
+        id: paymentIntent.id,
+        status: paymentIntent.status,
+        amount: paymentIntent.amount
+      });
+
+      if (paymentIntent.status === 'succeeded') {
+        console.log('9. Confirming payment with backend...');
+        
+        // Confirm payment on backend
+        try {
+          const confirmPayload = {
+            paymentIntentId: paymentIntent.id
+          };
+          
+          const confirmResponse = await fetch(`${process.env.REACT_APP_API_URL}/payments/confirm`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(confirmPayload),
+          });
+
+          const confirmData = await confirmResponse.json();
+
+          if (confirmData.success) {
+            console.log('10. Payment confirmation successful!');
+            
+            // Redirect immediately to prevent UI flicker
+            navigate(`/orders/${confirmData.data.order.id}`);
+          } else {
+            console.log('11. Payment confirmation failed:', confirmData.message);
+            throw new Error(confirmData.message || 'Payment confirmation failed');
+          }
+        } catch (err) {
+          console.error('12. Payment confirmation error:', err);
+          setError('Payment was processed but confirmation failed. Please contact support.');
+        }
+      } else {
+        setError('Payment was not completed successfully');
+      }
+    } catch (err) {
+      console.error('Payment process error:', err);
+      setError(`Payment failed: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const cardElementOptions = {

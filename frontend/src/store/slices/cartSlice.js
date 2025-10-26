@@ -8,6 +8,7 @@ export const fetchCart = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       const { auth } = getState();
+      
       if (!auth.user?.id && !auth.user?._id) {
         // Return empty cart for unauthenticated users instead of rejecting
         return {
@@ -17,7 +18,10 @@ export const fetchCart = createAsyncThunk(
           lastUpdated: null
         };
       }
-      const response = await api.get(`/cart/${auth.user.id || auth.user._id}`);
+      
+      const userId = auth.user.id || auth.user._id;
+      const response = await api.get(`/cart/${userId}`);
+      
       return response.data.data;
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to fetch cart';
@@ -33,31 +37,43 @@ export const addToCart = createAsyncThunk(
       const { auth } = getState();
       
       // Debug logging
-      console.log('Auth state in addToCart:', {
-        isAuthenticated: auth.isAuthenticated,
-        hasUser: !!auth.user,
-        user: auth.user,
-        userId: auth.user?.id,
-        token: !!localStorage.getItem('token')
-      });
+      // console.log('🛒 ADD TO CART - Auth state:', {
+      //   isAuthenticated: auth.isAuthenticated,
+      //   hasUser: !!auth.user,
+      //   user: auth.user,
+      //   userId: auth.user?.id,
+      //   userIdUnderscore: auth.user?._id,
+      //   token: !!localStorage.getItem('token')
+      // });
+      
+      // console.log('🛒 ADD TO CART - Product details:', {
+      //   productId,
+      //   quantity,
+      //   selectedVariants
+      // });
       
       // Check if user exists and has an ID
       if (!auth.user?.id && !auth.user?._id) {
+        console.error('❌ ADD TO CART FAILED - User not authenticated');
         dispatch(showErrorToast('Please sign in to add items to cart'));
         return rejectWithValue('User not authenticated');
       }
 
+      console.log('🛒 ADD TO CART - Making API call...');
       const response = await api.post('/cart/add', {
         productId,
         quantity,
         selectedVariants,
       });
       
+      console.log('🛒 ADD TO CART - API Response:', response.data);
+      
       // Show success toast
       dispatch(showSuccessToast('Item added to cart successfully!'));
       
       return response.data.data;
     } catch (error) {
+      console.error('🛒 ADD TO CART - Error:', error);
       const message = error.response?.data?.message || 'Failed to add item to cart';
       
       // Show error toast
