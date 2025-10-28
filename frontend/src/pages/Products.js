@@ -19,28 +19,81 @@ const Products = () => {
   const [wishlist, setWishlist] = useState(new Set());
 
   useEffect(() => {
-    dispatch(fetchProducts({ 
+    // Build parameters object, only including non-empty values
+    const params = { 
       page: 1, 
-      limit: 12,
-      search: searchTerm,
-      category: selectedCategory,
-      minPrice: priceRange.min,
-      maxPrice: priceRange.max,
-      sortBy 
-    }));
+      limit: 12
+    };
+
+    if (searchTerm) params.search = searchTerm;
+    if (selectedCategory) params.category = selectedCategory;
+    if (priceRange.min) params.minPrice = priceRange.min;
+    if (priceRange.max) params.maxPrice = priceRange.max;
+
+    // Convert sortBy to backend format
+    if (sortBy) {
+      switch (sortBy) {
+        case 'price_asc':
+          params.sort = 'price';
+          break;
+        case 'price_desc':
+          params.sort = '-price';
+          break;
+        case 'rating':
+          params.sort = '-rating';
+          break;
+        case 'newest':
+          params.sort = '-createdAt';
+          break;
+        case 'name':
+          params.sort = 'name';
+          break;
+        default:
+          params.sort = 'name';
+      }
+    }
+
+    dispatch(fetchProducts(params));
   }, [dispatch, searchTerm, selectedCategory, priceRange, sortBy]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    dispatch(fetchProducts({ 
+    
+    // Build parameters object, only including non-empty values
+    const params = { 
       page: 1, 
-      limit: 12,
-      search: searchTerm,
-      category: selectedCategory,
-      minPrice: priceRange.min,
-      maxPrice: priceRange.max,
-      sortBy 
-    }));
+      limit: 12
+    };
+
+    if (searchTerm) params.search = searchTerm;
+    if (selectedCategory) params.category = selectedCategory;
+    if (priceRange.min) params.minPrice = priceRange.min;
+    if (priceRange.max) params.maxPrice = priceRange.max;
+
+    // Convert sortBy to backend format
+    if (sortBy) {
+      switch (sortBy) {
+        case 'price_asc':
+          params.sort = 'price';
+          break;
+        case 'price_desc':
+          params.sort = '-price';
+          break;
+        case 'rating':
+          params.sort = '-rating';
+          break;
+        case 'newest':
+          params.sort = '-createdAt';
+          break;
+        case 'name':
+          params.sort = 'name';
+          break;
+        default:
+          params.sort = 'name';
+      }
+    }
+
+    dispatch(fetchProducts(params));
   };
 
   const handleAddToCart = (product) => {
