@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchOrder } from '../store/slices/orderSlice';
+import { clearCurrentOrder } from '../store/slices/orderSlice';
 import { FiArrowLeft, FiPackage, FiTruck, FiCheckCircle, FiMapPin, FiCreditCard, FiCalendar, FiUser } from 'react-icons/fi';
 import ProductImage from '../components/ProductImage';
 
@@ -10,21 +11,18 @@ const OrderDetail = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   
-  const { currentOrder, isLoading, error } = useSelector(state => state.orders);
+  const { currentOrder, isOrderLoading, orderError } = useSelector(state => state.orders);
 
   useEffect(() => {
     if (id) {
       dispatch(fetchOrder(id));
     }
+    
+    // Cleanup: Clear current order when component unmounts
+    return () => {
+      dispatch(clearCurrentOrder());
+    };
   }, [dispatch, id]);
-
-  // Debug: Log the current order to see its structure
-  useEffect(() => {
-    if (currentOrder) {
-      console.log('Current Order Data:', currentOrder);
-      console.log('Order Status:', currentOrder.orderStatus, 'Type:', typeof currentOrder.orderStatus);
-    }
-  }, [currentOrder]);
 
   const getStatusIcon = (status) => {
     const statusString = typeof status === 'string' ? status : (status?.current || 'pending');
@@ -66,23 +64,55 @@ const OrderDetail = () => {
     }
   };
 
-  if (isLoading) {
+  // Show loading while fetching data
+  if (isOrderLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading order details...</p>
+        <div className="animate-pulse">
+          {/* Header Skeleton */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-4">
+              <div className="w-24 h-8 bg-gray-200 rounded"></div>
+              <div className="w-32 h-6 bg-gray-200 rounded"></div>
+            </div>
+            <div className="w-20 h-8 bg-gray-200 rounded"></div>
+          </div>
+          
+          {/* Order Info Skeleton */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            </div>
+          </div>
+          
+          {/* Items Skeleton */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+            <div className="space-y-4">
+              <div className="flex space-x-4">
+                <div className="w-16 h-16 bg-gray-200 rounded"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  // Show error state
+  if (orderError) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            <p>Error loading order: {error}</p>
+            <p>Error loading order: {orderError}</p>
           </div>
           <button
             onClick={() => navigate('/orders')}
@@ -95,7 +125,8 @@ const OrderDetail = () => {
     );
   }
 
-  if (!currentOrder) {
+  // Show "not found" only after loading is complete and no order exists
+  if (!isOrderLoading && !currentOrder) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
