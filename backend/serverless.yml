@@ -12,10 +12,10 @@ provider:
     name: ecommerce-backend-dev-deployment-bucket
   environment:
     NODE_ENV: ${self:provider.stage}
-    MONGODB_URI: 'mongodb+srv://abhayg:abhayg@cluster0.xhfggiz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
-    JWT_SECRET: 'your_jwt_secret_key_here_for_production'
+    MONGODB_URI: ${env:MONGODB_URI}
+    JWT_SECRET: ${env:JWT_SECRET}
     REDIS_DISABLED: 'true'
-    STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY, 'your_stripe_secret_key_here'}
+    STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY}
   iam:
     role:
       statements:

@@ -86,7 +86,8 @@ const reliableProductImages = [
 async function setViaPlaceholderImages() {
   try {
     console.log('Connecting to MongoDB...');
-    await mongoose.connect('mongodb://localhost:27017/ecommerce');
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ecommerce';
+    await mongoose.connect(mongoURI);
     console.log('✅ Connected to MongoDB');
 
     let updatedCount = 0;

@@ -107,44 +107,19 @@ const confirmPayment = lambdaWrapper(async (event, context) => {
   validateRequiredFields(body, ['paymentIntentId']);
 
   const { paymentIntentId } = body;
-  
-  console.log(`=== PAYMENT CONFIRMATION DEBUG ===`);
-  console.log(`User ID: ${user._id}`);
-  console.log(`User name: ${user.name}`);
-  console.log(`Payment Intent ID: ${paymentIntentId}`);
-  console.log(`Request timestamp: ${new Date().toISOString()}`);
-
   try {
     // Retrieve payment intent from Stripe
-    console.log(`1. Retrieving payment intent from Stripe: ${paymentIntentId}`);
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     console.log(`2. Stripe payment intent retrieved - Status: ${paymentIntent.status}, Amount: ${paymentIntent.amount}`);
 
     if (!paymentIntent) {
-      console.log(`Payment intent not found in Stripe: ${paymentIntentId}`);
       return errorResponse('Payment intent not found', 404);
     }
-    
-    console.log(`Payment intent status: ${paymentIntent.status}, amount: ${paymentIntent.amount}`);
 
-    // Simplified approach: Find the most recent pending order for this user
-    console.log(`3. Looking for order with payment session: ${paymentIntentId}`);
-    
-    // First, try to find order by transaction ID
+    // Find order by transaction ID first
     let order = await Order.findOne({ 'paymentInfo.transactionId': paymentIntentId });
-    console.log(`4. Order search by transaction ID result:`, order ? `Found order ${order._id}` : 'Not found');
     
     if (!order) {
-      console.log(`5. Searching for pending orders for user: ${user._id}`);
-      
-      // Find ALL orders for this user to debug
-      const allUserOrders = await Order.find({ user: user._id }).sort({ createdAt: -1 });
-      console.log(`6. Total orders for user: ${allUserOrders.length}`);
-      
-      allUserOrders.forEach((o, index) => {
-        console.log(`   Order ${index + 1}: ID=${o._id}, Status=${o.orderStatus.current}, PaymentStatus=${o.paymentInfo.paymentStatus}, TransactionID=${o.paymentInfo.transactionId || 'null'}, Created=${o.createdAt}`);
-      });
-      
       // Find the most recent pending order for this user
       order = await Order.findOne({ 
         user: user._id,
@@ -152,31 +127,21 @@ const confirmPayment = lambdaWrapper(async (event, context) => {
       }).sort({ createdAt: -1 });
       
       if (!order) {
-        console.log(`7. ERROR: No pending orders found for user: ${user._id}`);
         return errorResponse('No pending orders found. Please create a new order.', 404);
       }
-      
-      console.log(`8. Found pending order: ${order._id}, updating with transaction ID`);
       
       // Update this order with the transaction ID
       order.paymentInfo.transactionId = paymentIntentId;
       await order.save();
-      console.log(`9. Order updated with transaction ID successfully`);
     }
     
     // Verify user owns this order
     if (order.user.toString() !== user._id.toString()) {
-      console.log(`Access denied - Order user: ${order.user}, Request user: ${user._id}`);
       return errorResponse('Access denied', 403);
     }
-    
-    console.log(`Found order: ${order._id} for user: ${user._id}`);
 
     // Check payment status
-    console.log(`11. Checking payment status: ${paymentIntent.status}`);
-    
     if (paymentIntent.status === 'succeeded') {
-      console.log(`12. Payment succeeded for order: ${order._id}`);
       
       // Update order payment status
       order.paymentInfo.paymentStatus = 'completed';

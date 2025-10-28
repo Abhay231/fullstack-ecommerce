@@ -1,7 +1,10 @@
 console.log('Setting up REAL product images from Unsplash...');
 
 const mongoose = require('mongoose');
-const Product = require('../models/Product');
+const Pr  try {
+    console.log('🔌 Connecting to MongoDB...');
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ecommerce';
+    await mongoose.connect(mongoURI);ct = require('../models/Product');
 
 // Real product images from Unsplash - these are direct image URLs that work without CORS issues
 const realProductImages = [
@@ -113,8 +116,9 @@ const realProductImages = [
 
 async function setRealImages() {
   try {
-    console.log('Connecting to MongoDB...');
-    await mongoose.connect('mongodb://localhost:27017/ecommerce');
+    console.log('🔌 Connecting to MongoDB...');
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ecommerce';
+    await mongoose.connect(mongoURI);
     console.log('✅ Connected to MongoDB');
 
     let updatedCount = 0;
