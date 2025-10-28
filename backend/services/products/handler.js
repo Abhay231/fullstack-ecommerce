@@ -96,14 +96,14 @@ const getProducts = lambdaWrapper(async (event, context) => {
   const limitNum = parseInt(limit);
   const skip = (pageNum - 1) * limitNum;
 
-  // Execute queries
+  // Execute queries in parallel for better performance
   const [products, totalProducts] = await Promise.all([
     Product.find(filter)
+      .select('name description price originalPrice category brand images inventory ratings status featured createdAt') // Only select needed fields
       .sort(sortObject)
       .skip(skip)
       .limit(limitNum)
-      .populate('createdBy', 'name email')
-      .lean(),
+      .lean(), // Use lean() for better performance (no Mongoose overhead)
     Product.countDocuments(filter)
   ]);
 

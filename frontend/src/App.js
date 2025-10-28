@@ -7,6 +7,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { store } from './store/store';
 import Layout from './components/Layout/Layout';
 import ProtectedRoute from './components/Common/ProtectedRoute';
+import ErrorBoundary from './components/Common/ErrorBoundary';
 import ToastContainer from './components/ToastContainer';
 
 // Pages
@@ -28,45 +29,47 @@ const stripePromise = loadStripe(import.meta.env.REACT_APP_STRIPE_PUBLISHABLE_KE
 
 function App() {
   return (
-    <Provider store={store}>
-      <Elements stripe={stripePromise}>
-        <Router>
-          <div className="App min-h-screen bg-gray-50">
-            <ToastContainer />
-            
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+    <ErrorBoundary>
+      <Provider store={store}>
+        <Elements stripe={stripePromise}>
+          <Router>
+            <div className="App min-h-screen bg-gray-50">
+              <ToastContainer />
               
-              {/* Protected Routes with Layout */}
-              <Route path="/" element={<Layout />}>
-                <Route index element={<Home />} />
-                <Route path="products" element={<Products />} />
-                <Route path="products/:id" element={<ProductDetail />} />
-                <Route path="cart" element={<Cart />} />
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
                 
-                {/* Protected Routes */}
-                <Route element={<ProtectedRoute />}>
-                  <Route path="checkout" element={<Checkout />} />
-                  <Route path="orders" element={<Orders />} />
-                  <Route path="orders/:id" element={<OrderDetail />} />
-                  <Route path="profile" element={<Profile />} />
+                {/* Protected Routes with Layout */}
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Home />} />
+                  <Route path="products" element={<Products />} />
+                  <Route path="products/:id" element={<ProductDetail />} />
+                  <Route path="cart" element={<Cart />} />
+                  
+                  {/* Protected Routes */}
+                  <Route element={<ProtectedRoute />}>
+                    <Route path="checkout" element={<Checkout />} />
+                    <Route path="orders" element={<Orders />} />
+                    <Route path="orders/:id" element={<OrderDetail />} />
+                    <Route path="profile" element={<Profile />} />
+                  </Route>
+                  
+                  {/* Admin Routes */}
+                  <Route element={<ProtectedRoute adminOnly />}>
+                    <Route path="admin/*" element={<Admin />} />
+                  </Route>
+                  
+                  {/* 404 Page */}
+                  <Route path="*" element={<NotFound />} />
                 </Route>
-                
-                {/* Admin Routes */}
-                <Route element={<ProtectedRoute adminOnly />}>
-                  <Route path="admin/*" element={<Admin />} />
-                </Route>
-                
-                {/* 404 Page */}
-                <Route path="*" element={<NotFound />} />
-              </Route>
-            </Routes>
-          </div>
-        </Router>
-      </Elements>
-    </Provider>
+              </Routes>
+            </div>
+          </Router>
+        </Elements>
+      </Provider>
+    </ErrorBoundary>
   );
 }
 

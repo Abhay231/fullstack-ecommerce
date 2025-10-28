@@ -162,6 +162,17 @@ productSchema.virtual('stockStatus').get(function() {
   return 'in-stock';
 });
 
+// Indexes for better query performance
+productSchema.index({ category: 1 });
+productSchema.index({ brand: 1 });
+productSchema.index({ status: 1 });
+productSchema.index({ featured: 1 });
+productSchema.index({ price: 1 });
+productSchema.index({ 'ratings.average': -1 });
+productSchema.index({ createdAt: -1 });
+productSchema.index({ name: 'text', description: 'text', category: 'text', brand: 'text' }); // Text search
+productSchema.index({ status: 1, featured: 1, createdAt: -1 }); // Compound index for common queries
+
 // Ensure virtual fields are serialized
 productSchema.set('toJSON', { virtuals: true });
 
