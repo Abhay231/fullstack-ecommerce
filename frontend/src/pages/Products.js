@@ -320,8 +320,8 @@ const Products = () => {
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-500">{product.category}</span>
                         <div className="flex items-center">
-                          {renderStars(product.rating)}
-                          <span className="ml-1 text-sm text-gray-600">({product.numReviews})</span>
+                          {renderStars(product.ratings?.average || 0)}
+                          <span className="ml-1 text-sm text-gray-600">({product.ratings?.count || 0})</span>
                         </div>
                       </div>
 

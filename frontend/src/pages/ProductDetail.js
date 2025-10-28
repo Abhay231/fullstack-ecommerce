@@ -177,8 +177,8 @@ const ProductDetail = () => {
 
           <div className="flex items-center space-x-4 mb-6">
             <div className="flex items-center">
-              {renderStars(product.rating)}
-              <span className="ml-2 text-gray-600">({product.numReviews} reviews)</span>
+              {renderStars(product.ratings?.average || 0)}
+              <span className="ml-2 text-gray-600">({product.ratings?.count || 0} reviews)</span>
             </div>
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
               product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -361,8 +361,8 @@ const ProductDetail = () => {
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold">Customer Reviews</h3>
                 <div className="flex items-center space-x-2">
-                  {renderStars(product.rating)}
-                  <span className="text-gray-600">({product.numReviews} reviews)</span>
+                  {renderStars(product.ratings?.average || 0)}
+                  <span className="text-gray-600">({product.ratings?.count || 0} reviews)</span>
                 </div>
               </div>
 
