@@ -24,7 +24,7 @@ import Admin from './pages/Admin/Admin';
 import NotFound from './pages/NotFound';
 
 // Initialize Stripe
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || 'pk_test_dummy_key');
+const stripePromise = loadStripe(import.meta.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || 'pk_test_dummy_key');
 
 function App() {
   return (

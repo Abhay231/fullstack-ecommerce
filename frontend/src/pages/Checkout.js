@@ -9,7 +9,7 @@ import { FiCreditCard, FiTruck, FiShield, FiArrowLeft, FiCheck } from 'react-ico
 import ProductImage from '../components/ProductImage';
 
 // Load Stripe (replace with your publishable key)
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || 'pk_test_your_stripe_key');
+const stripePromise = loadStripe(import.meta.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || 'pk_test_your_stripe_key');
 
 const CheckoutForm = () => {
   const stripe = useStripe();
@@ -73,7 +73,7 @@ const CheckoutForm = () => {
     try {
       // First create the order
       console.log('A5. Creating order with API call...');
-      const orderResponse = await fetch(`${process.env.REACT_APP_API_URL}/orders`, {
+      const orderResponse = await fetch(`${import.meta.env.REACT_APP_API_URL}/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,7 +134,7 @@ const CheckoutForm = () => {
 
       // Then create payment intent for the order
       console.log('A10. Creating payment intent for order...');
-      const paymentResponse = await fetch(`${process.env.REACT_APP_API_URL}/payments/create-intent`, {
+      const paymentResponse = await fetch(`${import.meta.env.REACT_APP_API_URL}/payments/create-intent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -208,7 +208,7 @@ const CheckoutForm = () => {
       // Step 1: Create the order and payment intent first
       console.log('3. Creating order and payment intent...');
       
-      const orderResponse = await fetch(`${process.env.REACT_APP_API_URL}/orders`, {
+      const orderResponse = await fetch(`${import.meta.env.REACT_APP_API_URL}/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -264,7 +264,7 @@ const CheckoutForm = () => {
       setOrderId(orderData.data._id);
 
       // Step 2: Create payment intent for the order
-      const paymentResponse = await fetch(`${process.env.REACT_APP_API_URL}/payments/create-intent`, {
+      const paymentResponse = await fetch(`${import.meta.env.REACT_APP_API_URL}/payments/create-intent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -331,7 +331,7 @@ const CheckoutForm = () => {
             paymentIntentId: paymentIntent.id
           };
           
-          const confirmResponse = await fetch(`${process.env.REACT_APP_API_URL}/payments/confirm`, {
+          const confirmResponse = await fetch(`${import.meta.env.REACT_APP_API_URL}/payments/confirm`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
