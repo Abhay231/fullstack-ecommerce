@@ -61,7 +61,7 @@ functions:
     handler: services/auth/handler.updateProfile
     events:
       - http:
-          path: /auth/profile
+          path: /auth/update-profile
           method: put
           cors: true
 
