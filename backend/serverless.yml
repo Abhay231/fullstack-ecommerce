@@ -57,12 +57,12 @@ functions:
           method: get
           cors: true
   
-  updateProfile:
+  authUpdateProfile:
     handler: services/auth/handler.updateProfile
     events:
       - http:
           path: /auth/update-profile
-          method: put
+          method: post
           cors: true
 
   # Product Service

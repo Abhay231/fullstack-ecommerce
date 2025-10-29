@@ -93,7 +93,7 @@ const lambdaToExpress = (handler) => {
 app.post('/auth/register', lambdaToExpress(authHandlers.register));
 app.post('/auth/login', lambdaToExpress(authHandlers.login));
 app.get('/auth/profile', lambdaToExpress(authHandlers.getProfile));
-app.put('/auth/update-profile', lambdaToExpress(authHandlers.updateProfile));
+app.post('/auth/update-profile', lambdaToExpress(authHandlers.updateProfile));
 app.post('/auth/change-password', lambdaToExpress(authHandlers.changePassword));
 app.post('/auth/logout', lambdaToExpress(authHandlers.logout));
 
