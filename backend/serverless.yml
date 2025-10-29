@@ -63,7 +63,16 @@ functions:
       - http:
           path: /auth/profile
           method: put
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Requested-With
+            allowCredentials: false
 
   # Product Service
   getProducts:
