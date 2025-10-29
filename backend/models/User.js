@@ -30,11 +30,8 @@ const userSchema = new mongoose.Schema({
     default: 'user'
   },
   address: {
-    street: String,
-    city: String,
-    state: String,
-    zipCode: String,
-    country: String
+    type: mongoose.Schema.Types.Mixed, // Allows both string and object
+    default: ''
   },
   phone: {
     type: String,

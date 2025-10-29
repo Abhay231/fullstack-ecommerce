@@ -36,22 +36,6 @@ export const addToCart = createAsyncThunk(
     try {
       const { auth } = getState();
       
-      // Debug logging
-      // console.log('🛒 ADD TO CART - Auth state:', {
-      //   isAuthenticated: auth.isAuthenticated,
-      //   hasUser: !!auth.user,
-      //   user: auth.user,
-      //   userId: auth.user?.id,
-      //   userIdUnderscore: auth.user?._id,
-      //   token: !!localStorage.getItem('token')
-      // });
-      
-      // console.log('🛒 ADD TO CART - Product details:', {
-      //   productId,
-      //   quantity,
-      //   selectedVariants
-      // });
-      
       // Check if user exists and has an ID
       if (!auth.user?.id && !auth.user?._id) {
         console.error('❌ ADD TO CART FAILED - User not authenticated');

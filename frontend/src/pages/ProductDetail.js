@@ -56,9 +56,9 @@ const ProductDetail = () => {
   };
 
   const renderStars = (rating) => {
-    return [...Array(5)].map((_, i) => (
+    return Array.from({ length: 5 }, (_, i) => (
       <FiStar
-        key={i}
+        key={`star-${i}-${rating}`}
         className={`w-5 h-5 ${i < Math.floor(rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
       />
     ));
@@ -137,7 +137,7 @@ const ProductDetail = () => {
             <div className="flex space-x-2 overflow-x-auto">
               {product.images.map((image, index) => (
                 <button
-                  key={index}
+                  key={`thumb-${product._id}-${index}`}
                   onClick={() => setSelectedImage(index)}
                   className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
                     selectedImage === index ? 'border-blue-600' : 'border-gray-200'

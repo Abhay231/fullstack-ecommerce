@@ -133,9 +133,9 @@ const Products = () => {
   };
 
   const renderStars = (rating) => {
-    return [...Array(5)].map((_, i) => (
+    return [...new Array(5)].map((_, i) => (
       <FiStar
-        key={i}
+        key={`star-${i}-${rating}`}
         className={`w-4 h-4 ${i < Math.floor(rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
       />
     ));
@@ -201,10 +201,11 @@ const Products = () => {
             <div className={`space-y-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
               {/* Category Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="category-select" className="block text-sm font-medium text-gray-700 mb-2">
                   Category
                 </label>
                 <select
+                  id="category-select"
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -218,33 +219,38 @@ const Products = () => {
 
               {/* Price Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="price-range" className="block text-sm font-medium text-gray-700 mb-2">
                   Price Range
                 </label>
                 <div className="flex space-x-2">
                   <input
+                    id="price-min"
                     type="number"
                     placeholder="Min"
                     value={priceRange.min}
                     onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
                     className="w-1/2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Minimum price"
                   />
                   <input
+                    id="price-max"
                     type="number"
                     placeholder="Max"
                     value={priceRange.max}
                     onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
                     className="w-1/2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Maximum price"
                   />
                 </div>
               </div>
 
               {/* Sort By */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="sort-select" className="block text-sm font-medium text-gray-700 mb-2">
                   Sort By
                 </label>
                 <select
+                  id="sort-select"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -374,9 +380,9 @@ const Products = () => {
               {pagination && pagination.totalPages > 1 && (
                 <div className="flex justify-center mt-8">
                   <div className="flex space-x-2">
-                    {[...Array(pagination.totalPages)].map((_, i) => (
+                    {[...new Array(pagination.totalPages)].map((_, i) => (
                       <button
-                        key={i}
+                        key={`page-${i + 1}`}
                         onClick={() => dispatch(fetchProducts({ 
                           page: i + 1, 
                           limit: 12,

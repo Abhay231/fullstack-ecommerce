@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaSave, FaTimes, FaBox, FaCreditCard } from 'react-icons/fa';
-import api from '../services/api';
+import { updateProfile } from '../store/slices/authSlice';
 import { fetchOrders } from '../store/slices/orderSlice';
+import { showSuccessToast, showErrorToast } from '../store/slices/toastSlice';
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -60,7 +61,6 @@ const Profile = () => {
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      console.log('Saving user data:', editedUser);
       
       // Prepare data for API (exclude email as it's not allowed to be updated)
       const updateData = {
@@ -69,25 +69,23 @@ const Profile = () => {
         address: editedUser.address
       };
       
-      // Make API call to update user profile
-      const response = await api.put('/auth/profile', updateData);
+      // Use Redux action to update profile
+      const result = await dispatch(updateProfile(updateData));
       
-      if (response.data.success) {
-        console.log('Profile updated successfully:', response.data);
-        
+      if (updateProfile.fulfilled.match(result)) {
         // Exit edit mode
         setIsEditing(false);
         
         // Show success message
-        alert('Profile updated successfully!');
-        
-        // Optionally reload the page to get fresh data
-        window.location.reload();
+        dispatch(showSuccessToast('Profile updated successfully!'));
+      } else {
+        // Handle error
+        const errorMessage = result.payload || 'Failed to update profile. Please try again.';
+        dispatch(showErrorToast(errorMessage));
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to update profile. Please try again.';
-      alert(errorMessage);
+      dispatch(showErrorToast('Failed to update profile. Please try again.'));
     } finally {
       setIsSaving(false);
     }
