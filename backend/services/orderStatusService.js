@@ -76,7 +76,6 @@ class OrderStatusService {
           }
         }
       }
-
     //   if (updatedCount > 0) {
     //     console.log(`Updated ${updatedCount} order(s) status`);
     //   } else {
