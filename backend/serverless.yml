@@ -57,22 +57,13 @@ functions:
           method: get
           cors: true
   
-  authUpdateProfile:
+  updateProfile:
     handler: services/auth/handler.updateProfile
     events:
       - http:
           path: /auth/profile
           method: put
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Requested-With
-            allowCredentials: false
+          cors: true
 
   # Product Service
   getProducts:
