@@ -55,7 +55,16 @@ functions:
       - http:
           path: /auth/profile
           method: get
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Requested-With
+            allowCredentials: false
   
   authUpdateProfile:
     handler: services/auth/handler.updateProfile
@@ -63,7 +72,16 @@ functions:
       - http:
           path: /auth/update-profile
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Requested-With
+            allowCredentials: false
 
   # Product Service
   getProducts:
