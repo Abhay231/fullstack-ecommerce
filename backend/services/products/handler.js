@@ -161,6 +161,13 @@ const getProducts = lambdaWrapper(async (event, context) => {
       limit: limitNum,
       totalPages,
       totalItems: totalProducts
+    },
+    debug: {
+      hasSearch: !!search,
+      searchTerm: search || null,
+      sortApplied: !!search ? 'custom-priority' : 'database',
+      version: 'v2.1-search-priority',
+      timestamp: new Date().toISOString()
     }
   };
 
