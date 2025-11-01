@@ -105,7 +105,7 @@ jobs:
     - name: Deploy to AWS Lambda
       run: |
         cd backend
-        serverless deploy --stage prod
+        serverless deploy --stage dev
       env:
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
