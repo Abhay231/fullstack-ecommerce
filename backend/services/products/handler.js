@@ -68,14 +68,15 @@ const getProducts = lambdaWrapper(async (event, context) => {
     if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
   }
 
+  // Handle search - use regex for partial matches
   if (search) {
-    // Use only regex search for better compatibility
+    const searchRegex = new RegExp(search, 'i');
     filter.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { description: { $regex: search, $options: 'i' } },
-      { category: { $regex: search, $options: 'i' } },
-      { brand: { $regex: search, $options: 'i' } },
-      { tags: { $regex: search, $options: 'i' } }
+      { name: searchRegex },
+      { description: searchRegex },
+      { category: searchRegex },
+      { brand: searchRegex },
+      { tags: searchRegex }
     ];
   }
 
@@ -86,9 +87,12 @@ const getProducts = lambdaWrapper(async (event, context) => {
   // Build sort object
   let sortObject = {};
   if (sort.startsWith('-')) {
-    sortObject[sort.substring(1)] = -1;
+    const field = sort.substring(1);
+    // Handle special case for rating
+    sortObject[field === 'rating' ? 'ratings.average' : field] = -1;
   } else {
-    sortObject[sort] = 1;
+    // Handle special case for rating
+    sortObject[sort === 'rating' ? 'ratings.average' : sort] = 1;
   }
 
   // Calculate pagination
@@ -96,16 +100,57 @@ const getProducts = lambdaWrapper(async (event, context) => {
   const limitNum = parseInt(limit);
   const skip = (pageNum - 1) * limitNum;
 
-  // Execute queries in parallel for better performance
-  const [products, totalProducts] = await Promise.all([
-    Product.find(filter)
-      .select('name description price originalPrice category brand images inventory ratings status featured createdAt') // Only select needed fields
-      .sort(sortObject)
-      .skip(skip)
-      .limit(limitNum)
-      .lean(), // Use lean() for better performance (no Mongoose overhead)
-    Product.countDocuments(filter)
-  ]);
+  // Execute queries with proper pagination
+  let products;
+  let totalProducts;
+
+  if (search) {
+    // For search, we need to fetch all matching products to apply custom sorting
+    const [allProducts, count] = await Promise.all([
+      Product.find(filter)
+        .select('name description price originalPrice category brand images inventory ratings status featured createdAt')
+        .sort(sortObject)
+        .lean(),
+      Product.countDocuments(filter)
+    ]);
+
+    totalProducts = count;
+
+    // Sort results to prioritize name matches
+    const searchLower = search.toLowerCase();
+    const sortedProducts = [...allProducts].sort((a, b) => {
+      const aNameMatch = a.name.toLowerCase().includes(searchLower);
+      const bNameMatch = b.name.toLowerCase().includes(searchLower);
+      
+      // Prioritize products with search term in name
+      if (aNameMatch && !bNameMatch) return -1;
+      if (!aNameMatch && bNameMatch) return 1;
+      
+      // If both or neither match in name, check if name starts with search term
+      const aNameStarts = a.name.toLowerCase().startsWith(searchLower);
+      const bNameStarts = b.name.toLowerCase().startsWith(searchLower);
+      
+      if (aNameStarts && !bNameStarts) return -1;
+      if (!aNameStarts && bNameStarts) return 1;
+      
+      // Otherwise maintain original sort order
+      return 0;
+    });
+
+    // Apply pagination after custom sorting
+    products = sortedProducts.slice(skip, skip + limitNum);
+  } else {
+    // For non-search queries, use database-level pagination for better performance
+    [products, totalProducts] = await Promise.all([
+      Product.find(filter)
+        .select('name description price originalPrice category brand images inventory ratings status featured createdAt')
+        .sort(sortObject)
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Product.countDocuments(filter)
+    ]);
+  }
 
   const totalPages = Math.ceil(totalProducts / limitNum);
 
@@ -296,7 +341,10 @@ const getBrands = lambdaWrapper(async (event, context) => {
   if (!brands) {
     brands = await Product.distinct('brand', { 
       status: 'active',
-      brand: { $ne: null, $ne: '' }
+      $and: [
+        { brand: { $ne: null } },
+        { brand: { $ne: '' } }
+      ]
     });
     await redisClient.set(cacheKey, brands, 1800); // Cache for 30 minutes
   }

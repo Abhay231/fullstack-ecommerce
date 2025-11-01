@@ -134,13 +134,23 @@ const productSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Create index for search
+// Create index for search with weights for better relevance
+// Name matches get highest priority, then brand/category, then description
 productSchema.index({
   name: 'text',
   description: 'text',
   category: 'text',
   brand: 'text',
   tags: 'text'
+}, {
+  weights: {
+    name: 10,        // Highest priority - product name matches
+    brand: 5,        // High priority - brand matches
+    category: 5,     // High priority - category matches
+    tags: 3,         // Medium priority - tag matches
+    description: 1   // Lowest priority - description matches
+  },
+  name: 'ProductTextIndex'
 });
 
 // Virtual for discounted price

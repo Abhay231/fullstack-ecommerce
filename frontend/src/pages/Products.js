@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { fetchProducts, clearFilters } from '../store/slices/productSlice';
 import { addToCart, fetchCart } from '../store/slices/cartSlice';
 import { FiSearch, FiFilter, FiShoppingCart, FiStar, FiHeart } from 'react-icons/fi';
@@ -11,17 +11,43 @@ const Products = () => {
   const { products, isLoading: loading, error, pagination } = useSelector(state => state.products);
   const { items: cartItems } = useSelector(state => state.cart);
   
-  const [searchTerm, setSearchTerm] = useState('');
+  // Get URL search parameters
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Initialize search term from URL if present
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [sortBy, setSortBy] = useState('name');
+  const [currentPage, setCurrentPage] = useState(1);
   const [wishlist, setWishlist] = useState(new Set());
 
+  // Track if it's the first render
+  const isFirstRender = useRef(true);
+
+  // Sync search term with URL parameters when URL changes
+  useEffect(() => {
+    const urlSearchTerm = searchParams.get('search') || '';
+    if (urlSearchTerm !== searchTerm) {
+      setSearchTerm(urlSearchTerm);
+    }
+  }, [searchParams]);
+
+  // Reset to page 1 when filters change (but not on first render or when only page changes)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, priceRange.min, priceRange.max, sortBy]);
+
+  // Fetch products when page or filters change
   useEffect(() => {
     // Build parameters object, only including non-empty values
     const params = { 
-      page: 1, 
+      page: currentPage, 
       limit: 12
     };
 
@@ -54,67 +80,38 @@ const Products = () => {
     }
 
     dispatch(fetchProducts(params));
-  }, [dispatch, searchTerm, selectedCategory, priceRange, sortBy]);
+  }, [dispatch, currentPage, searchTerm, selectedCategory, priceRange.min, priceRange.max, sortBy]);
 
   const handleSearch = (e) => {
     e.preventDefault();
     
-    // Build parameters object, only including non-empty values
-    const params = { 
-      page: 1, 
-      limit: 12
-    };
-
-    if (searchTerm) params.search = searchTerm;
-    if (selectedCategory) params.category = selectedCategory;
-    if (priceRange.min) params.minPrice = priceRange.min;
-    if (priceRange.max) params.maxPrice = priceRange.max;
-
-    // Convert sortBy to backend format
-    if (sortBy) {
-      switch (sortBy) {
-        case 'price_asc':
-          params.sort = 'price';
-          break;
-        case 'price_desc':
-          params.sort = '-price';
-          break;
-        case 'rating':
-          params.sort = '-rating';
-          break;
-        case 'newest':
-          params.sort = '-createdAt';
-          break;
-        case 'name':
-          params.sort = 'name';
-          break;
-        default:
-          params.sort = 'name';
-      }
+    // Update URL with search term (this will trigger the useEffect to fetch)
+    if (searchTerm.trim()) {
+      setSearchParams({ search: searchTerm.trim() });
+    } else {
+      setSearchParams({});
     }
+  };
 
-    dispatch(fetchProducts(params));
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    // Update URL immediately (this will trigger search via useEffect)
+    if (value.trim()) {
+      setSearchParams({ search: value.trim() });
+    } else {
+      setSearchParams({});
+    }
   };
 
   const handleAddToCart = (product) => {
-    console.log('🛒 PRODUCTS - Adding to cart:', {
-      product: {
-        id: product._id,
-        name: product.name,
-        price: product.price
-      }
-    });
-    
     dispatch(addToCart({
       productId: product._id,
       quantity: 1,
-      selectedVariants: {} // Add this to match the expected format
-    })).then((result) => {
-      console.log('🛒 PRODUCTS - Add to cart result:', result);
-      // Refetch cart to update counter
+      selectedVariants: {}
+    })).then(() => {
       dispatch(fetchCart());
-    }).catch((error) => {
-      console.error('🛒 PRODUCTS - Add to cart error:', error);
     });
   };
 
@@ -169,7 +166,7 @@ const Products = () => {
             <input
               type="text"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
               placeholder="Search products..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -383,17 +380,9 @@ const Products = () => {
                     {[...new Array(pagination.totalPages)].map((_, i) => (
                       <button
                         key={`page-${i + 1}`}
-                        onClick={() => dispatch(fetchProducts({ 
-                          page: i + 1, 
-                          limit: 12,
-                          search: searchTerm,
-                          category: selectedCategory,
-                          minPrice: priceRange.min,
-                          maxPrice: priceRange.max,
-                          sortBy 
-                        }))}
+                        onClick={() => setCurrentPage(i + 1)}
                         className={`px-3 py-2 rounded-md ${
-                          pagination.currentPage === i + 1
+                          currentPage === i + 1
                             ? 'bg-blue-600 text-white'
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                         }`}
