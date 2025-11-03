@@ -119,9 +119,26 @@ const addToCart = lambdaWrapper(async (event, context) => {
     return errorResponse('Product is not available', 400);
   }
 
-  // Check inventory
-  if (product.inventory.quantity < quantity) {
-    return errorResponse(`Only ${product.inventory.quantity} items available in stock`, 400);
+  // Check inventory - calculate how many items are already reserved in ALL carts
+  const allCarts = await Cart.find({ 'items.product': productId });
+  let totalReservedQuantity = 0;
+  
+  // Count total reserved quantity across all carts
+  allCarts.forEach(cart => {
+    const cartItem = cart.items.find(item => item.product.toString() === productId);
+    if (cartItem) {
+      totalReservedQuantity += cartItem.quantity;
+    }
+  });
+
+  const availableStock = product.inventory.quantity - totalReservedQuantity;
+
+  if (availableStock < quantity) {
+    return errorResponse(`Cannot add ${quantity} items. Only ${Math.max(0, availableStock)} items available (${totalReservedQuantity} already in other carts)`, 400);
+  }
+
+  if (availableStock <= 0) {
+    return errorResponse('Product is out of stock - all items are reserved in other carts', 400);
   }
 
   // Get or create cart for authenticated user
@@ -144,9 +161,14 @@ const addToCart = lambdaWrapper(async (event, context) => {
   if (existingItemIndex > -1) {
     // Update quantity of existing item
     const newQuantity = cart.items[existingItemIndex].quantity + quantity;
+    const currentUserQuantity = cart.items[existingItemIndex].quantity;
     
-    if (newQuantity > product.inventory.quantity) {
-      return errorResponse(`Cannot add ${quantity} more items. Only ${product.inventory.quantity - cart.items[existingItemIndex].quantity} items available`, 400);
+    // Recalculate available stock excluding current user's existing quantity
+    const reservedByOthers = totalReservedQuantity - currentUserQuantity;
+    const availableForThisUser = product.inventory.quantity - reservedByOthers;
+    
+    if (newQuantity > availableForThisUser) {
+      return errorResponse(`Cannot add ${quantity} more items. Only ${Math.max(0, availableForThisUser - currentUserQuantity)} more items available`, 400);
     }
 
     cart.items[existingItemIndex].quantity = newQuantity;
@@ -210,14 +232,32 @@ const updateCartItem = lambdaWrapper(async (event, context) => {
     // Remove item from cart
     cart.items.splice(itemIndex, 1);
   } else {
-    // Check inventory
+    // Check inventory by calculating reserved quantities
     const product = await Product.findById(productId);
     if (!product) {
       return notFoundResponse('Product');
     }
 
-    if (product.inventory.quantity < quantity) {
-      return errorResponse(`Only ${product.inventory.quantity} items available in stock`, 400);
+    // Calculate how many items are already reserved in ALL carts
+    const allCarts = await Cart.find({ 'items.product': productId });
+    let totalReservedQuantity = 0;
+    
+    allCarts.forEach(cart => {
+      const cartItem = cart.items.find(item => item.product.toString() === productId);
+      if (cartItem) {
+        totalReservedQuantity += cartItem.quantity;
+      }
+    });
+
+    // Get current item quantity in this user's cart
+    const currentUserQuantity = cart.items[itemIndex].quantity;
+    
+    // Calculate available stock excluding current user's existing quantity
+    const reservedByOthers = totalReservedQuantity - currentUserQuantity;
+    const availableForThisUser = product.inventory.quantity - reservedByOthers;
+    
+    if (quantity > availableForThisUser) {
+      return errorResponse(`Cannot set quantity to ${quantity}. Only ${availableForThisUser} items available (${reservedByOthers} already reserved in other carts)`, 400);
     }
 
     // Update quantity and price

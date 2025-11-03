@@ -46,7 +46,7 @@ const ProductDetail = () => {
 
   const handleQuantityChange = (change) => {
     const newQuantity = quantity + change;
-    if (newQuantity >= 1 && newQuantity <= product.stock) {
+    if (newQuantity >= 1 && newQuantity <= product.inventory?.quantity) {
       setQuantity(newQuantity);
     }
   };
@@ -126,7 +126,7 @@ const ProductDetail = () => {
               alt={product.images?.[selectedImage]?.alt || product.name}
               className="w-full h-96 object-cover rounded-lg"
             />
-            {product.stock === 0 && (
+            {product.inventory?.quantity === 0 && (
               <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
                 <span className="text-white font-semibold text-xl">Out of Stock</span>
               </div>
@@ -181,9 +181,9 @@ const ProductDetail = () => {
               <span className="ml-2 text-gray-600">({product.ratings?.count || 0} reviews)</span>
             </div>
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-              product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              product.inventory?.quantity > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
             }`}>
-              {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+              {product.inventory?.quantity > 0 ? `${product.inventory.quantity} in stock` : 'Out of stock'}
             </span>
           </div>
 
@@ -245,7 +245,7 @@ const ProductDetail = () => {
               <span className="text-xl font-semibold w-12 text-center">{quantity}</span>
               <button
                 onClick={() => handleQuantityChange(1)}
-                disabled={quantity >= product.stock}
+                disabled={quantity >= product.inventory?.quantity}
                 className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
                 <FiPlus className="w-4 h-4" />
@@ -257,9 +257,9 @@ const ProductDetail = () => {
           <div className="flex space-x-4 mb-8">
             <button
               onClick={handleAddToCart}
-              disabled={product.stock === 0 || isInCart()}
+              disabled={product.inventory?.quantity === 0 || isInCart()}
               className={`flex-1 flex items-center justify-center space-x-2 py-3 px-6 rounded-lg font-medium transition-colors ${
-                product.stock === 0 || isInCart()
+                product.inventory?.quantity === 0 || isInCart()
                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}

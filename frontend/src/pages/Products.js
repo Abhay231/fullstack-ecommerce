@@ -312,7 +312,7 @@ const Products = () => {
                       >
                         <FiHeart className="w-4 h-4" />
                       </button>
-                      {product.stock === 0 && (
+                      {product.inventory?.quantity === 0 && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                           <span className="text-white font-semibold">Out of Stock</span>
                         </div>

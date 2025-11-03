@@ -17,6 +17,26 @@ const {
   validateRequiredFields
 } = require('../../utils/response');
 
+// Broadcast stock update function
+const broadcastStockUpdate = async (stockInfo) => {
+  try {
+    // Store update in Redis for real-time polling
+    const updateKey = `stock_update:${stockInfo.productId}:${Date.now()}`;
+    await redisClient.set(updateKey, stockInfo, 60); // Keep for 1 minute
+    
+    // Also set a general notification
+    const notificationKey = `stock_notification:${stockInfo.productId}`;
+    await redisClient.set(notificationKey, {
+      ...stockInfo,
+      timestamp: Date.now()
+    }, 60);
+
+    console.log(`📦 Stock update broadcasted for product ${stockInfo.productName}: ${stockInfo.quantity} remaining`);
+  } catch (error) {
+    console.error('Error broadcasting stock update:', error);
+  }
+};
+
 // Initialize database connection
 let dbConnection = null;
 const initDB = async () => {
@@ -100,12 +120,42 @@ const createOrder = lambdaWrapper(async (event, context) => {
     notes: notes || {}
   });
 
-  // Update product inventory
+  // Update product inventory and broadcast real-time updates
   for (const item of orderItems) {
-    await Product.findByIdAndUpdate(
+    const product = await Product.findByIdAndUpdate(
       item.product,
-      { $inc: { 'inventory.quantity': -item.quantity } }
+      { $inc: { 'inventory.quantity': -item.quantity } },
+      { new: true }
     );
+
+    // Real-time stock update notification
+    const stockInfo = {
+      productId: product._id,
+      productName: product.name,
+      quantity: product.inventory.quantity,
+      threshold: product.inventory.threshold,
+      status: product.inventory.quantity > 0 ? 'in-stock' : 'out-of-stock',
+      lowStock: product.inventory.quantity <= product.inventory.threshold && product.inventory.quantity > 0,
+      lastUpdated: new Date(),
+      orderId: order._id,
+      operation: 'purchase',
+      quantityPurchased: item.quantity
+    };
+
+    // Update cache immediately
+    const cacheKey = `stock:${product._id}`;
+    await redisClient.set(cacheKey, stockInfo, 30);
+
+    // Broadcast real-time update
+    await broadcastStockUpdate(stockInfo);
+
+    // If stock reaches 0, clear product caches
+    if (product.inventory.quantity === 0) {
+      await redisClient.del(`product:${product._id}`);
+      console.log(`⚠️ Product ${product.name} is now OUT OF STOCK`);
+    } else if (product.inventory.quantity <= product.inventory.threshold) {
+      console.log(`🔔 Product ${product.name} is now LOW STOCK (${product.inventory.quantity} remaining)`);
+    }
   }
 
   // Clear user's cart
