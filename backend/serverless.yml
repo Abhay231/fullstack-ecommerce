@@ -238,7 +238,7 @@ functions:
     handler: services/wishlist/handler.addToWishlist
     events:
       - http:
-          path: /wishlist/add
+          path: /wishlist/add/{productId}
           method: post
           cors: true
   
@@ -254,7 +254,7 @@ functions:
     handler: services/wishlist/handler.moveToCart
     events:
       - http:
-          path: /wishlist/move-to-cart
+          path: /wishlist/move-to-cart/{productId}
           method: post
           cors: true
   
