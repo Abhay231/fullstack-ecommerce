@@ -5,6 +5,7 @@ import cartSlice from './slices/cartSlice';
 import orderSlice from './slices/orderSlice';
 import uiSlice from './slices/uiSlice';
 import toastSlice from './slices/toastSlice';
+import wishlistSlice from './slices/wishlistSlice';
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     orders: orderSlice,
     ui: uiSlice,
     toast: toastSlice,
+    wishlist: wishlistSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

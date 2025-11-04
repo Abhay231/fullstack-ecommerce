@@ -225,6 +225,47 @@ functions:
           method: post
           cors: true
 
+  # Wishlist Service
+  getWishlist:
+    handler: services/wishlist/handler.getWishlist
+    events:
+      - http:
+          path: /wishlist
+          method: get
+          cors: true
+  
+  addToWishlist:
+    handler: services/wishlist/handler.addToWishlist
+    events:
+      - http:
+          path: /wishlist/add
+          method: post
+          cors: true
+  
+  removeFromWishlist:
+    handler: services/wishlist/handler.removeFromWishlist
+    events:
+      - http:
+          path: /wishlist/remove/{productId}
+          method: delete
+          cors: true
+  
+  moveToCart:
+    handler: services/wishlist/handler.moveToCart
+    events:
+      - http:
+          path: /wishlist/move-to-cart
+          method: post
+          cors: true
+  
+  clearWishlist:
+    handler: services/wishlist/handler.clearWishlist
+    events:
+      - http:
+          path: /wishlist/clear
+          method: delete
+          cors: true
+
 custom:
   serverless-offline:
     httpPort: 3001

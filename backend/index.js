@@ -12,6 +12,7 @@ const productHandlers = require('./services/products/handler');
 const cartHandlers = require('./services/cart/handler');
 const orderHandlers = require('./services/orders/handler');
 const paymentHandlers = require('./services/payments/handler');
+const wishlistHandlers = require('./services/wishlist/handler');
 
 // Import order status service
 const orderStatusService = require('./services/orderStatusService');
@@ -116,6 +117,13 @@ app.delete('/cart/remove', lambdaToExpress(cartHandlers.removeFromCart));
 app.delete('/cart/clear', lambdaToExpress(cartHandlers.clearCart));
 app.get('/cart-summary', lambdaToExpress(cartHandlers.getCartSummary));
 app.post('/cart/sync', lambdaToExpress(cartHandlers.syncCart));
+
+// Wishlist routes
+app.get('/wishlist', lambdaToExpress(wishlistHandlers.getWishlist));
+app.post('/wishlist/add/:productId', lambdaToExpress(wishlistHandlers.addToWishlist));
+app.delete('/wishlist/remove/:productId', lambdaToExpress(wishlistHandlers.removeFromWishlist));
+app.post('/wishlist/move-to-cart/:productId', lambdaToExpress(wishlistHandlers.moveToCart));
+app.delete('/wishlist/clear', lambdaToExpress(wishlistHandlers.clearWishlist));
 
 // Order routes
 app.post('/orders', lambdaToExpress(orderHandlers.createOrder));

@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProductById } from '../store/slices/productSlice';
 import { addToCart } from '../store/slices/cartSlice';
+import { addToWishlist, removeFromWishlist, fetchWishlist } from '../store/slices/wishlistSlice';
+import { addToast } from '../store/slices/toastSlice';
 import { FiStar, FiShoppingCart, FiHeart, FiShare2, FiMinus, FiPlus, FiTruck, FiShield, FiRefreshCw } from 'react-icons/fi';
 import ProductImage from '../components/ProductImage';
 
@@ -12,6 +14,11 @@ const ProductDetail = () => {
   const dispatch = useDispatch();
   const { currentProduct: product, isProductLoading: loading, error } = useSelector(state => state.products);
   const { items: cartItems } = useSelector(state => state.cart);
+  const { items: wishlistItems, loading: wishlistLoading } = useSelector(state => state.wishlist);
+  const { isAuthenticated } = useSelector(state => state.auth);
+  
+  // Check if product is in wishlist
+  const isInWishlist = wishlistItems.some(item => item.product._id === id);
   
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -19,13 +26,18 @@ const ProductDetail = () => {
   const [activeTab, setActiveTab] = useState('description');
   const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
-  const [isWishlisted, setIsWishlisted] = useState(false);
 
   useEffect(() => {
     if (id) {
       dispatch(fetchProductById(id));
     }
   }, [dispatch, id]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchWishlist());
+    }
+  }, [dispatch, isAuthenticated]);
 
   useEffect(() => {
     if (product?.images?.length > 0) {
@@ -75,6 +87,28 @@ const ProductDetail = () => {
       date: new Date().toLocaleDateString()
     }]);
     setNewReview({ rating: 5, comment: '' });
+  };
+
+  const handleWishlist = async () => {
+    if (!isAuthenticated) {
+      dispatch(addToast({ message: 'Please login to add items to wishlist', type: 'error' }));
+      return;
+    }
+
+    try {
+      if (isInWishlist) {
+        await dispatch(removeFromWishlist(id)).unwrap();
+        dispatch(addToast({ message: 'Removed from wishlist', type: 'success' }));
+      } else {
+        await dispatch(addToWishlist(id)).unwrap();
+        dispatch(addToast({ message: 'Added to wishlist', type: 'success' }));
+      }
+    } catch (error) {
+      dispatch(addToast({ 
+        message: 'Failed to update wishlist', 
+        type: 'error' 
+      }));
+    }
   };
 
   if (loading) {
@@ -160,10 +194,12 @@ const ProductDetail = () => {
             <span className="text-sm text-blue-600 font-medium">{product.category}</span>
             <div className="flex space-x-2">
               <button
-                onClick={() => setIsWishlisted(!isWishlisted)}
+                onClick={handleWishlist}
+                disabled={wishlistLoading}
                 className={`p-2 rounded-full ${
-                  isWishlisted ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-600'
-                } hover:scale-110 transition-transform`}
+                  isInWishlist ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-600'
+                } hover:scale-110 transition-transform ${wishlistLoading ? 'cursor-wait' : ''}`}
+                title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
               >
                 <FiHeart className="w-5 h-5" />
               </button>

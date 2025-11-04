@@ -24,6 +24,7 @@ import Register from './pages/Auth/Register';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin/Admin';
 import NotFound from './pages/NotFound';
+import Wishlist from './pages/Wishlist';
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || 'pk_test_dummy_key');
@@ -55,6 +56,7 @@ function App() {
                     <Route path="orders" element={<Orders />} />
                     <Route path="orders/:id" element={<OrderDetail />} />
                     <Route path="profile" element={<Profile />} />
+                    <Route path="wishlist" element={<Wishlist />} />
                   </Route>
                   
                   {/* Admin Routes */}

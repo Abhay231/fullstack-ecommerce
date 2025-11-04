@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link, useSearchParams } from 'react-router-dom';
 import { fetchProducts, clearFilters } from '../store/slices/productSlice';
 import { addToCart, fetchCart } from '../store/slices/cartSlice';
+import { addToWishlist, removeFromWishlist, fetchWishlist } from '../store/slices/wishlistSlice';
+import { addToast } from '../store/slices/toastSlice';
 import { FiSearch, FiFilter, FiShoppingCart, FiStar, FiHeart } from 'react-icons/fi';
 import ProductImage from '../components/ProductImage';
 
@@ -10,6 +12,8 @@ const Products = () => {
   const dispatch = useDispatch();
   const { products, isLoading: loading, error, pagination } = useSelector(state => state.products);
   const { items: cartItems } = useSelector(state => state.cart);
+  const { items: wishlistItems, loading: wishlistLoading } = useSelector(state => state.wishlist);
+  const { isAuthenticated } = useSelector(state => state.auth);
   
   // Get URL search parameters
   const [searchParams, setSearchParams] = useSearchParams();
@@ -21,7 +25,9 @@ const Products = () => {
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [sortBy, setSortBy] = useState('name');
   const [currentPage, setCurrentPage] = useState(1);
-  const [wishlist, setWishlist] = useState(new Set());
+
+  // Create a Set of wishlist product IDs for quick lookup
+  const wishlistProductIds = new Set(wishlistItems.map(item => item.product._id));
 
   // Track if it's the first render
   const isFirstRender = useRef(true);
@@ -33,6 +39,13 @@ const Products = () => {
       setSearchTerm(urlSearchTerm);
     }
   }, [searchParams]);
+
+  // Fetch wishlist when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchWishlist());
+    }
+  }, [dispatch, isAuthenticated]);
 
   // Reset to page 1 when filters change (but not on first render or when only page changes)
   useEffect(() => {
@@ -115,14 +128,26 @@ const Products = () => {
     });
   };
 
-  const handleWishlist = (productId) => {
-    const newWishlist = new Set(wishlist);
-    if (newWishlist.has(productId)) {
-      newWishlist.delete(productId);
-    } else {
-      newWishlist.add(productId);
+  const handleWishlist = async (productId) => {
+    if (!isAuthenticated) {
+      dispatch(addToast({ message: 'Please login to add items to wishlist', type: 'error' }));
+      return;
     }
-    setWishlist(newWishlist);
+
+    try {
+      if (wishlistProductIds.has(productId)) {
+        await dispatch(removeFromWishlist(productId)).unwrap();
+        dispatch(addToast({ message: 'Removed from wishlist', type: 'success' }));
+      } else {
+        await dispatch(addToWishlist(productId)).unwrap();
+        dispatch(addToast({ message: 'Added to wishlist', type: 'success' }));
+      }
+    } catch (error) {
+      dispatch(addToast({ 
+        message: 'Failed to update wishlist', 
+        type: 'error' 
+      }));
+    }
   };
 
   const isInCart = (productId) => {
@@ -304,11 +329,12 @@ const Products = () => {
                       />
                       <button
                         onClick={() => handleWishlist(product._id)}
+                        disabled={wishlistLoading}
                         className={`absolute top-3 right-3 p-2 rounded-full ${
-                          wishlist.has(product._id) 
+                          wishlistProductIds.has(product._id) 
                             ? 'bg-red-500 text-white' 
                             : 'bg-white text-gray-600 hover:text-red-500'
-                        } shadow-md transition-colors`}
+                        } shadow-md transition-colors ${wishlistLoading ? 'cursor-wait' : ''}`}
                       >
                         <FiHeart className="w-4 h-4" />
                       </button>

@@ -131,6 +131,15 @@ export const endpoints = {
     sync: '/cart/sync',
   },
   
+  // Wishlist
+  wishlist: {
+    get: '/wishlist',
+    add: (id) => `/wishlist/add/${id}`,
+    remove: (id) => `/wishlist/remove/${id}`,
+    moveToCart: (id) => `/wishlist/move-to-cart/${id}`,
+    clear: '/wishlist/clear',
+  },
+  
   // Orders
   orders: {
     list: '/orders',

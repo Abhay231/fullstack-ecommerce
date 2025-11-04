@@ -100,6 +100,17 @@ const Header = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Wishlist */}
+            {isAuthenticated && (
+              <Link 
+                to="/wishlist" 
+                className="relative p-2 text-gray-700 hover:text-blue-600 transition-colors"
+                title="Wishlist"
+              >
+                <Heart className="h-6 w-6" />
+              </Link>
+            )}
+
             {/* Cart */}
             <Link 
               to="/cart" 
@@ -214,6 +225,18 @@ const Header = () => {
               >
                 Products
               </Link>
+              
+              {/* Wishlist Link */}
+              {isAuthenticated && (
+                <Link 
+                  to="/wishlist" 
+                  className="flex items-center px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md transition-colors"
+                  onClick={() => dispatch(closeMobileMenu())}
+                >
+                  <Heart className="h-5 w-5 mr-2" />
+                  Wishlist
+                </Link>
+              )}
               
               {/* Cart Link */}
               <Link 
