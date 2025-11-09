@@ -5,6 +5,7 @@ import Header from './Header';
 import Footer from './Footer';
 import { loadUser } from '../../store/slices/authSlice';
 import { fetchCart } from '../../store/slices/cartSlice';
+import { fetchWishlist } from '../../store/slices/wishlistSlice';
 
 const Layout = () => {
   const dispatch = useDispatch();
@@ -19,9 +20,10 @@ const Layout = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    // Fetch cart only after auth state is determined
+    // Fetch cart and wishlist only after auth state is determined
     if (!authLoading) {
       dispatch(fetchCart());
+      dispatch(fetchWishlist());
     }
   }, [dispatch, authLoading]);
 

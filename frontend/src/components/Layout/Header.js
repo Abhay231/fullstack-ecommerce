@@ -22,6 +22,7 @@ const Header = () => {
   
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const { totalItems } = useSelector((state) => state.cart);
+  const { totalItems: wishlistTotalItems } = useSelector((state) => state.wishlist);
   const { isMobileMenuOpen } = useSelector((state) => state.ui);
 
   const handleSearch = (e) => {
@@ -108,6 +109,11 @@ const Header = () => {
                 title="Wishlist"
               >
                 <Heart className="h-6 w-6" />
+                {wishlistTotalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {wishlistTotalItems}
+                  </span>
+                )}
               </Link>
             )}
 
@@ -235,6 +241,11 @@ const Header = () => {
                 >
                   <Heart className="h-5 w-5 mr-2" />
                   Wishlist
+                  {wishlistTotalItems > 0 && (
+                    <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {wishlistTotalItems}
+                    </span>
+                  )}
                 </Link>
               )}
               
