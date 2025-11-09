@@ -149,7 +149,11 @@ const wishlistSlice = createSlice({
       .addCase(fetchWishlist.fulfilled, (state, action) => {
         state.isLoading = false;
         state.items = action.payload.items || [];
-        state.totalItems = action.payload.totalItems || 0;
+        // Calculate totalItems from items array if not provided or doesn't match
+        const itemsCount = state.items.length;
+        state.totalItems = action.payload.totalItems !== undefined 
+          ? action.payload.totalItems 
+          : itemsCount;
         state.error = null;
       })
       .addCase(fetchWishlist.rejected, (state, action) => {
@@ -165,7 +169,11 @@ const wishlistSlice = createSlice({
       .addCase(addToWishlist.fulfilled, (state, action) => {
         state.isLoading = false;
         state.items = action.payload.items || [];
-        state.totalItems = action.payload.totalItems || 0;
+        // Calculate totalItems from items array if not provided or doesn't match
+        const itemsCount = state.items.length;
+        state.totalItems = action.payload.totalItems !== undefined 
+          ? action.payload.totalItems 
+          : itemsCount;
         state.error = null;
       })
       .addCase(addToWishlist.rejected, (state, action) => {
@@ -181,7 +189,11 @@ const wishlistSlice = createSlice({
       .addCase(removeFromWishlist.fulfilled, (state, action) => {
         state.isLoading = false;
         state.items = action.payload.items || [];
-        state.totalItems = action.payload.totalItems || 0;
+        // Calculate totalItems from items array if not provided or doesn't match
+        const itemsCount = state.items.length;
+        state.totalItems = action.payload.totalItems !== undefined 
+          ? action.payload.totalItems 
+          : itemsCount;
         state.error = null;
       })
       .addCase(removeFromWishlist.rejected, (state, action) => {
