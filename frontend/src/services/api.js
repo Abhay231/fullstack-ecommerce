@@ -1,8 +1,21 @@
 import axios from 'axios';
 
+// Determine API URL - use localhost in development if not explicitly set to AWS
+const getApiUrl = () => {
+  const envUrl = import.meta.env.REACT_APP_API_URL;
+  const isDevelopment = import.meta.env.MODE === 'development' || import.meta.env.DEV;
+  
+  // In development, prefer localhost unless explicitly set to a non-localhost URL
+  if (isDevelopment && (!envUrl || envUrl.includes('localhost') || window.location.hostname === 'localhost')) {
+    return 'http://localhost:3001';
+  }
+  
+  return envUrl || 'http://localhost:3001';
+};
+
 // Create axios instance
 const api = axios.create({
-  baseURL: import.meta.env.REACT_APP_API_URL || 'http://localhost:3001',
+  baseURL: getApiUrl(),
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -105,6 +118,8 @@ export const endpoints = {
     updateProfile: '/auth/profile',
     changePassword: '/auth/change-password',
     logout: '/auth/logout',
+    forgotPassword: '/auth/forgot-password',
+    resetPassword: '/auth/reset-password',
   },
   
   // Products

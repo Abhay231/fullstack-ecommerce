@@ -90,6 +90,39 @@ export const changePassword = createAsyncThunk(
   }
 );
 
+export const forgotPassword = createAsyncThunk(
+  'auth/forgotPassword',
+  async (email, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to send reset email';
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const resetPassword = createAsyncThunk(
+  'auth/resetPassword',
+  async ({ token, password }, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/auth/reset-password', { token, password });
+      
+      // Store token in localStorage if provided (auto-login after reset)
+      if (response.data.data?.token) {
+        localStorage.setItem('token', response.data.data.token);
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.data.token}`;
+      }
+      
+      return response.data;
+    } catch (error) {
+      const message = error.response?.data?.message || 'Password reset failed';
+      return rejectWithValue(message);
+    }
+  }
+);
+
 // Initial state
 const initialState = {
   user: null,
@@ -201,6 +234,36 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(changePassword.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Forgot password
+      .addCase(forgotPassword.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(forgotPassword.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(forgotPassword.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Reset password
+      .addCase(resetPassword.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(resetPassword.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Store token if provided (loadUser will set isAuthenticated and user)
+        if (action.payload.data?.token) {
+          state.token = action.payload.data.token;
+        }
+        state.error = null;
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

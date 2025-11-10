@@ -89,6 +89,46 @@ functions:
               - POST
               - OPTIONS
 
+  authForgotPassword:
+    handler: services/auth/handler.forgotPassword
+    events:
+      - http:
+          path: /auth/forgot-password
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Requested-With
+            allowCredentials: false
+            methods:
+              - POST
+              - OPTIONS
+  
+  authResetPassword:
+    handler: services/auth/handler.resetPassword
+    events:
+      - http:
+          path: /auth/reset-password
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Requested-With
+            allowCredentials: false
+            methods:
+              - POST
+              - OPTIONS
+
   # Product Service
   getProducts:
     handler: services/products/handler.getProducts

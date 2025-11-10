@@ -97,6 +97,8 @@ app.get('/auth/profile', lambdaToExpress(authHandlers.getProfile));
 app.post('/auth/update-profile', lambdaToExpress(authHandlers.updateProfile));
 app.post('/auth/change-password', lambdaToExpress(authHandlers.changePassword));
 app.post('/auth/logout', lambdaToExpress(authHandlers.logout));
+app.post('/auth/forgot-password', lambdaToExpress(authHandlers.forgotPassword));
+app.post('/auth/reset-password', lambdaToExpress(authHandlers.resetPassword));
 
 // Product routes
 app.get('/products', lambdaToExpress(productHandlers.getProducts));
