@@ -3,6 +3,8 @@ const connectDB = require('../../utils/database');
 const redisClient = require('../../utils/redis');
 const User = require('../../models/User');
 const { generateToken, authenticate } = require('../../utils/auth');
+const crypto = require('crypto');
+const sendEmail = require('../../utils/sendEmail'); 
 const {
   lambdaWrapper,
   successResponse,
@@ -255,11 +257,192 @@ const logout = lambdaWrapper(async (event, context) => {
   return successResponse(null, 'Logged out successfully');
 });
 
+// Forgot password - generate reset token
+// const forgotPassword = lambdaWrapper(async (event, context) => {
+//   await initDB();
+  
+//   const body = parseBody(event);
+//   validateRequiredFields(body, ['email']);
+
+//   const { email } = body;
+
+//   // Find user
+//   const user = await User.findOne({ email: email.toLowerCase() });
+  
+//   // Don't reveal if user exists or not for security
+//   if (!user) {
+//     return successResponse(
+//       { message: 'If that email exists, a password reset link has been sent.' },
+//       'Password reset email sent'
+//     );
+//   }
+
+//   // Generate reset token
+//   const resetToken = user.getResetPasswordToken();
+//   await user.save({ validateBeforeSave: false });
+
+//   // Clear user cache
+//   await redisClient.del(`user:${user._id}`);
+
+//   // In a real application, you would send an email here
+//   // For development, we'll return the reset token in the response
+//   // In production, remove the resetToken from the response and send it via email
+//   const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+
+//   // TODO: Send email with resetUrl
+//   // For now, we'll return the token for development purposes
+//   // In production, remove this and send email instead
+  
+//   if (process.env.NODE_ENV === 'development') {
+//     return successResponse(
+//       { 
+//         message: 'Password reset token generated. Check your email for reset instructions.',
+//         resetToken: resetToken, // Only in development
+//         resetUrl: resetUrl
+//       },
+//       'Password reset email sent'
+//     );
+//   }
+
+//   return successResponse(
+//     { message: 'If that email exists, a password reset link has been sent to your email.' },
+//     'Password reset email sent'
+//   );
+// });
+
+const forgotPassword = lambdaWrapper(async (event, context) => {
+  await initDB();
+
+  const body = parseBody(event);
+  validateRequiredFields(body, ['email']);
+
+  const { email } = body;
+
+  // Find user
+  const user = await User.findOne({ email: email.toLowerCase() });
+
+  // Always return success to avoid revealing if account exists
+  if (!user) {
+    return successResponse(
+      { message: 'If that email exists, a password reset link has been sent.' },
+      'Password reset email sent'
+    );
+  }
+
+  // Generate reset token
+  const resetToken = user.getResetPasswordToken();
+  await user.save({ validateBeforeSave: false });
+
+  // Clear cache if exists
+  await redisClient.del(`user:${user._id}`);
+
+  // Reset URL
+  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+
+  try {
+    // ✅ SEND EMAIL
+    const message = `
+      <p>Hello ${user.name},</p>
+      <p>You requested a password reset.</p>
+      <p>Click the link below to reset your password:</p>
+      <a href="${resetUrl}" target="_blank">${resetUrl}</a>
+      <br/><br/>
+      <p>If you didn't request this, ignore this email.</p>
+    `;
+
+    await sendEmail({
+      email: user.email,
+      subject: "Password Reset Request",
+      message
+    });
+
+    // In Dev Mode: Also return token for testing
+    if (process.env.NODE_ENV === 'development') {
+      return successResponse(
+        {
+          message: 'Password reset email sent successfully (Development Mode)',
+          resetUrl,
+          resetToken
+        },
+        'Password reset email sent'
+      );
+    }
+
+    return successResponse(
+      { message: 'Password reset email sent to your email.' },
+      'Password reset email sent'
+    );
+
+  } catch (error) {
+
+    // Roll back reset tokens if email fails
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    return errorResponse('Email could not be sent. Please try again later.', 500);
+  }
+});
+
+
+// Reset password - use token to reset password
+const resetPassword = lambdaWrapper(async (event, context) => {
+  await initDB();
+  
+  const body = parseBody(event);
+  validateRequiredFields(body, ['token', 'password']);
+
+  const { token, password } = body;
+
+  // Validate password
+  if (password.length < 6) {
+    return errorResponse('Password must be at least 6 characters long', 400);
+  }
+
+  // Get hashed token
+  const resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+
+  // Find user with this token and token not expired
+  const user = await User.findOne({
+    resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() }
+  }).select('+password +resetPasswordToken +resetPasswordExpire');
+
+  if (!user) {
+    return errorResponse('Invalid or expired reset token', 400);
+  }
+
+  // Set new password
+  user.password = password;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  await user.save();
+
+  // Clear user cache
+  await redisClient.del(`user:${user._id}`);
+
+  // Generate new token for automatic login (optional)
+  const authToken = generateToken(user._id);
+
+  return successResponse(
+    { 
+      message: 'Password reset successfully',
+      token: authToken // Optional: auto-login after reset
+    },
+    'Password reset successful'
+  );
+});
+
 module.exports = {
   register,
   login,
   getProfile,
   updateProfile,
   changePassword,
-  logout
+  logout,
+  forgotPassword,
+  resetPassword
 };

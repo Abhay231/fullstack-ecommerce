@@ -21,6 +21,8 @@ import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
+import ForgotPassword from './pages/Auth/ForgotPassword';
+import ResetPassword from './pages/Auth/ResetPassword';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin/Admin';
 import NotFound from './pages/NotFound';
@@ -42,6 +44,8 @@ function App() {
                 {/* Public Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 
                 {/* Protected Routes with Layout */}
                 <Route path="/" element={<Layout />}>
