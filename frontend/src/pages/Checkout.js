@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { fetchCart } from '../store/slices/cartSlice';
+import { fetchCart, clearCart, resetCart } from '../store/slices/cartSlice';
 import { createOrder } from '../store/slices/orderSlice';
 import { FiCreditCard, FiTruck, FiShield, FiArrowLeft, FiCheck } from 'react-icons/fi';
 import ProductImage from '../components/ProductImage';
@@ -344,7 +344,22 @@ const CheckoutForm = () => {
 
           if (confirmData.success) {
             console.log('10. Payment confirmation successful!');
-            
+
+            // Clear cart on both server and client so the cart icon updates immediately
+            try {
+              // Attempt to clear server-side cart and then reset local state
+              await dispatch(clearCart());
+            } catch (clearErr) {
+              console.warn('Failed to clear cart on server:', clearErr);
+            }
+
+            // Ensure immediate client-side reset as a fallback
+            try {
+              dispatch(resetCart());
+            } catch (resetErr) {
+              console.warn('Failed to reset local cart state:', resetErr);
+            }
+
             // Redirect immediately to prevent UI flicker
             navigate(`/orders/${confirmData.data.order.id}`);
           } else {
