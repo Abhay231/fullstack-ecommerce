@@ -129,6 +129,15 @@ functions:
               - POST
               - OPTIONS
 
+  # Admin - list users
+  authListUsers:
+    handler: services/auth/handler.listUsers
+    events:
+      - http:
+          path: /admin/users
+          method: get
+          cors: true
+
   # Product Service
   getProducts:
     handler: services/products/handler.getProducts

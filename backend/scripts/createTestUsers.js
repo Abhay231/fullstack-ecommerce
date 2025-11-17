@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+// bcrypt not needed - Mongoose pre-save will hash passwords
 const User = require('../models/User');
 require('dotenv').config();
 
@@ -9,61 +9,53 @@ const createTestUser = async () => {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ Connected to MongoDB');
 
-    // Clear existing test users
-    await User.deleteMany({ email: 'test@example.com' });
-    console.log('🗑️ Cleared existing test users');
+    // Clear existing demo users (if exist)
+    await User.deleteMany({ email: { $in: ['user@demo.com', 'admin@demo.com'] } });
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash('password123', 12);
-
-    // Create test user
+    // Create demo test user (password stored plain here; Mongoose pre-save will hash it)
     const testUser = new User({
-      name: 'Test User',
-      email: 'test@example.com',
-      password: hashedPassword,
-      role: 'customer',
+      name: 'Demo User',
+      email: 'user@demo.com',
+      password: 'password123',
+      role: 'user',
       isVerified: true,
       profile: {
-        firstName: 'Test',
+        firstName: 'Demo',
         lastName: 'User',
         phone: '+1234567890',
         address: {
-          street: '123 Test Street',
-          city: 'Test City',
-          state: 'Test State',
+          street: '123 Demo Street',
+          city: 'Demo City',
+          state: 'Demo State',
           zipCode: '12345',
-          country: 'Test Country'
+          country: 'Demo Country'
         }
       }
     });
 
     await testUser.save();
-    console.log('✅ Created test user:');
-    console.log('   Email: test@example.com');
+    console.log('✅ Created demo user:');
+    console.log('   Email: user@demo.com');
     console.log('   Password: password123');
 
-    // Create admin user
-    const adminHashedPassword = await bcrypt.hash('admin123', 12);
-    
-    await User.deleteMany({ email: 'admin@example.com' });
-    
+    // Create demo admin user (password stored plain here; Mongoose pre-save will hash it)
     const adminUser = new User({
-      name: 'Admin User',
-      email: 'admin@example.com',
-      password: adminHashedPassword,
+      name: 'Demo Admin',
+      email: 'admin@demo.com',
+      password: 'password123',
       role: 'admin',
       isVerified: true,
       profile: {
         firstName: 'Admin',
-        lastName: 'User',
+        lastName: 'Demo',
         phone: '+1234567890'
       }
     });
 
     await adminUser.save();
-    console.log('✅ Created admin user:');
-    console.log('   Email: admin@example.com');
-    console.log('   Password: admin123');
+    console.log('✅ Created demo admin user:');
+    console.log('   Email: admin@demo.com');
+    console.log('   Password: password123');
 
     console.log('\n🎉 Test users created successfully!');
     console.log('📊 Total users in database:', await User.countDocuments());

@@ -2,7 +2,7 @@ require('dotenv').config();
 const connectDB = require('../../utils/database');
 const redisClient = require('../../utils/redis');
 const User = require('../../models/User');
-const { generateToken, authenticate } = require('../../utils/auth');
+const { generateToken, authenticate, requireAdmin } = require('../../utils/auth');
 const crypto = require('crypto');
 const sendEmail = require('../../utils/sendEmail'); 
 const {
@@ -10,7 +10,8 @@ const {
   successResponse,
   errorResponse,
   parseBody,
-  validateRequiredFields
+  validateRequiredFields,
+  getQueryParams
 } = require('../../utils/response');
 
 // Initialize database connection
@@ -436,6 +437,37 @@ const resetPassword = lambdaWrapper(async (event, context) => {
   );
 });
 
+// Admin - list users (paginated)
+const listUsers = lambdaWrapper(async (event, context) => {
+  await initDB();
+
+  // Only admin can access
+  const admin = await requireAdmin(event);
+
+  const query = getQueryParams(event);
+  const page = parseInt(query.page || 1, 10);
+  const limit = parseInt(query.limit || 20, 10);
+  const skip = (page - 1) * limit;
+
+  const filter = {};
+  if (query.search) {
+    const q = new RegExp(query.search, 'i');
+    filter.$or = [
+      { name: q },
+      { email: q }
+    ];
+  }
+
+  const [users, total] = await Promise.all([
+    User.find(filter).select('-password -resetPasswordToken -resetPasswordExpire').skip(skip).limit(limit).lean(),
+    User.countDocuments(filter)
+  ]);
+
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  return successResponse({ items: users, pagination: { page, limit, totalPages, totalItems: total } }, 'Users retrieved successfully');
+});
+
 module.exports = {
   register,
   login,
@@ -445,4 +477,5 @@ module.exports = {
   logout,
   forgotPassword,
   resetPassword
+  , listUsers
 };

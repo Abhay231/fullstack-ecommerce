@@ -99,6 +99,8 @@ app.post('/auth/change-password', lambdaToExpress(authHandlers.changePassword));
 app.post('/auth/logout', lambdaToExpress(authHandlers.logout));
 app.post('/auth/forgot-password', lambdaToExpress(authHandlers.forgotPassword));
 app.post('/auth/reset-password', lambdaToExpress(authHandlers.resetPassword));
+// Admin users list
+app.get('/admin/users', lambdaToExpress(authHandlers.listUsers));
 
 // Product routes
 app.get('/products', lambdaToExpress(productHandlers.getProducts));
