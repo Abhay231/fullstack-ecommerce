@@ -8,7 +8,7 @@ import { store } from './store/store';
 import Layout from './components/Layout/Layout';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 import ErrorBoundary from './components/Common/ErrorBoundary';
-// Updated to fix profile update in production
+
 import ToastContainer from './components/ToastContainer';
 
 // Pages
