@@ -176,6 +176,12 @@ const Products = () => {
     );
   }
 
+  // compute counts for categories from the currently loaded products (best-effort)
+  const categoryCounts = categories.reduce((acc, cat) => {
+    acc[cat] = products.filter(p => (p.category || '').toLowerCase() === cat.toLowerCase()).length;
+    return acc;
+  }, {});
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
@@ -221,22 +227,27 @@ const Products = () => {
             </div>
 
             <div className={`space-y-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-              {/* Category Filter */}
+              {/* Category Chips */}
               <div>
-                <label htmlFor="category-select" className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
-                </label>
-                <select
-                  id="category-select"
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">All Categories</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
+                <label className="block text-sm font-medium text-gray-700 mb-3">Categories</label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setSelectedCategory('')}
+                    className={`px-3 py-1 rounded-full text-sm ${!selectedCategory ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+                  >
+                    All ({products.length})
+                  </button>
+                  {categories.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-3 py-1 rounded-full text-sm flex items-center gap-2 ${selectedCategory === cat ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+                    >
+                      <span className="font-medium">{cat}</span>
+                      <span className="text-xs text-gray-500">{categoryCounts[cat] || 0}</span>
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
 
               {/* Price Range */}
@@ -319,84 +330,100 @@ const Products = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {products.map(product => (
-                  <div key={product._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="relative">
-                      <ProductImage
-                        src={product.images?.[0]?.url || product.images?.[0]}
-                        alt={product.images?.[0]?.alt || product.name}
-                        className="w-full h-48 object-cover"
-                      />
-                      <button
-                        onClick={() => handleWishlist(product._id)}
-                        disabled={wishlistLoading}
-                        className={`absolute top-3 right-3 p-2 rounded-full ${
-                          wishlistProductIds.has(product._id) 
-                            ? 'bg-red-500 text-white' 
-                            : 'bg-white text-gray-600 hover:text-red-500'
-                        } shadow-md transition-colors ${wishlistLoading ? 'cursor-wait' : ''}`}
-                      >
-                        <FiHeart className="w-4 h-4" />
-                      </button>
-                      {product.inventory?.quantity === 0 && (
-                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                          <span className="text-white font-semibold">Out of Stock</span>
-                        </div>
-                      )}
-                    </div>
+                {products.map(product => {
+                  const stock = product.stock ?? product.inventory?.quantity ?? 0;
+                  const isOnSale = product.originalPrice && product.originalPrice > product.price;
+                  const isNew = product.createdAt ? (new Date() - new Date(product.createdAt)) < (1000 * 60 * 60 * 24 * 30) : false;
 
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-500">{product.category}</span>
-                        <div className="flex items-center">
-                          {renderStars(product.ratings?.average || 0)}
-                          <span className="ml-1 text-sm text-gray-600">({product.ratings?.count || 0})</span>
-                        </div>
-                      </div>
+                  return (
+                    <div key={product._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all">
+                      <div className="relative">
+                        <ProductImage
+                          src={product.images?.[0]?.url || product.images?.[0]}
+                          alt={product.images?.[0]?.alt || product.name}
+                          className="w-full h-48 object-cover"
+                        />
 
-                      <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                        <Link 
-                          to={`/products/${product._id}`}
-                          className="hover:text-blue-600 transition-colors"
-                        >
-                          {product.name}
-                        </Link>
-                      </h3>
-
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                        {product.description}
-                      </p>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-lg font-bold text-gray-900">
-                            ${product.price.toFixed(2)}
-                          </span>
-                          {product.originalPrice && product.originalPrice > product.price && (
-                            <span className="text-sm text-gray-500 line-through">
-                              ${product.originalPrice.toFixed(2)}
-                            </span>
-                          )}
-                        </div>
+                        {/* Badges */}
+                        {isOnSale && (
+                          <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">Sale</span>
+                        )}
+                        {isNew && !isOnSale && (
+                          <span className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-semibold px-2 py-1 rounded">New</span>
+                        )}
 
                         <button
-                          onClick={() => handleAddToCart(product)}
-                          disabled={product.stock === 0 || isInCart(product._id)}
-                          className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                            product.stock === 0 || isInCart(product._id)
-                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                              : 'bg-blue-600 text-white hover:bg-blue-700'
-                          }`}
+                          onClick={() => handleWishlist(product._id)}
+                          disabled={wishlistLoading}
+                          className={`absolute top-3 right-3 p-2 rounded-full ${
+                            wishlistProductIds.has(product._id)
+                              ? 'bg-red-500 text-white'
+                              : 'bg-white text-gray-600 hover:text-red-500'
+                          } shadow-md transition-colors ${wishlistLoading ? 'cursor-wait' : ''}`}
                         >
-                          <FiShoppingCart className="w-4 h-4" />
-                          <span>
-                            {isInCart(product._id) ? 'In Cart' : 'Add to Cart'}
-                          </span>
+                          <FiHeart className="w-4 h-4" />
                         </button>
+
+                        {stock === 0 && (
+                          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                            <span className="text-white font-semibold">Out of Stock</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-gray-500">{product.category}</span>
+                          <div className="flex items-center">
+                            {renderStars(product.ratings?.average || 0)}
+                            <span className="ml-1 text-sm text-gray-600">({product.ratings?.count || 0})</span>
+                          </div>
+                        </div>
+
+                        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                          <Link 
+                            to={`/products/${product._id}`}
+                            className="hover:text-blue-600 transition-colors"
+                          >
+                            {product.name}
+                          </Link>
+                        </h3>
+
+                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                          {product.description}
+                        </p>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-baseline space-x-3">
+                            <span className="text-lg font-bold text-gray-900">
+                              ${((product.discountedPrice ?? product.price) || 0).toFixed(2)}
+                            </span>
+                            {isOnSale && (
+                              <span className="text-sm text-gray-500 line-through">
+                                ${product.originalPrice.toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() => handleAddToCart(product)}
+                            disabled={stock === 0 || isInCart(product._id)}
+                            className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                              stock === 0 || isInCart(product._id)
+                                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:scale-105'
+                            }`}
+                          >
+                            <FiShoppingCart className="w-4 h-4" />
+                            <span>
+                              {isInCart(product._id) ? 'In Cart' : 'Add to Cart'}
+                            </span>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Pagination */}
