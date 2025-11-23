@@ -49,31 +49,83 @@ const Home = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-blue-600 to-purple-700 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Welcome to EcomStore
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
-              Discover amazing products, unbeatable prices, and exceptional service. 
-              Your perfect shopping destination awaits.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/products"
-                className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50 transition-colors"
-              >
-                Shop Now
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-              <Link
-                to="/products?featured=true"
-                className="inline-flex items-center px-8 py-3 border border-white text-base font-medium rounded-md text-white hover:bg-white hover:text-blue-600 transition-colors"
-              >
-                Featured Products
-              </Link>
+      {/* Hero Section - Professional Banner */}
+      <section
+        className="relative text-white"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1513709630908-291a1b6f0d8b?auto=format&fit=crop&w=2000&q=60')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/40"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <div className="text-left">
+              <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4">
+                Handpicked products. Exceptional prices.
+              </h1>
+              <p className="text-lg md:text-xl text-gray-200 max-w-xl mb-8">
+                Shop top brands, discover trending items and enjoy fast delivery—curated for a smarter shopping experience.
+              </p>
+
+              <div className="flex flex-wrap gap-4">
+                <Link
+                  to="/products"
+                  className="inline-flex items-center px-6 py-3 bg-emerald-400 text-emerald-900 font-semibold rounded-md shadow hover:scale-105 transform transition"
+                >
+                  Shop Now
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+
+                <Link
+                  to="/products?featured=true"
+                  className="inline-flex items-center px-6 py-3 border border-white/30 text-white rounded-md hover:bg-white/10 transition"
+                >
+                  Featured
+                </Link>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-6 text-sm text-gray-300">
+                <div className="flex items-center gap-3">
+                  <Users className="h-5 w-5 text-emerald-300" />
+                  <div>
+                    <div className="text-white font-semibold">10,000+</div>
+                    <div className="text-gray-300">Happy Customers</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="h-5 w-5 text-emerald-300" />
+                  <div>
+                    <div className="text-white font-semibold">25,000+</div>
+                    <div className="text-gray-300">Orders Delivered</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="hidden lg:block">
+              <div className="grid grid-cols-2 gap-4">
+                {products.slice(0, 4).map((product) => (
+                  <Link key={product._id} to={`/products/${product._id}`} className="group block rounded-lg overflow-hidden shadow-lg bg-white">
+                    <div className="relative">
+                      <img
+                        src={product.images?.[0]?.url || '/placeholder-image.jpg'}
+                        alt={product.name}
+                        className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {product.originalPrice && product.originalPrice > product.price && (
+                        <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">Sale</span>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <div className="text-sm font-medium text-gray-900 line-clamp-1">{product.name}</div>
+                      <div className="text-sm text-gray-500">${product.discountedPrice || product.price}</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>

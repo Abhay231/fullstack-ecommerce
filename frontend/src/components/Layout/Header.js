@@ -24,6 +24,7 @@ const Header = () => {
   const { totalItems } = useSelector((state) => state.cart);
   const { totalItems: wishlistTotalItems } = useSelector((state) => state.wishlist);
   const { isMobileMenuOpen } = useSelector((state) => state.ui);
+  
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -45,22 +46,31 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow-lg sticky top-0 z-50">
+    <header className="bg-white sticky top-0 z-50">
+      {/* Promo strip */}
+      <div className="bg-emerald-50 border-b border-emerald-100 text-emerald-800 text-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex justify-center">
+          Free shipping on orders over $50 • 30-day returns
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <Link 
-              to="/" 
-              className="text-2xl font-bold text-blue-600 hover:text-blue-700 transition-colors"
+            <Link
+              to="/"
+              className="flex items-center gap-3 text-2xl font-bold text-blue-600 hover:text-blue-700 transition-colors"
               onClick={() => dispatch(closeMobileMenu())}
             >
-              EcomStore v2.1
+              <span className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-lg font-bold">E</span>
+              <span className="sr-only">EcomStore</span>
+              <span className="hidden sm:inline">EcomStore</span>
             </Link>
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden md:flex space-x-8 md:ml-6 lg:ml-8">
             <Link 
               to="/" 
               className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
@@ -84,7 +94,7 @@ const Header = () => {
           </nav>
 
           {/* Search Bar */}
-          <div className="hidden md:flex flex-1 max-w-xs mx-8">
+          <div className="hidden md:flex flex-1 mx-8">
             <form onSubmit={handleSearch} className="w-full">
               <div className="relative">
                 <input
@@ -92,7 +102,7 @@ const Header = () => {
                   placeholder="Search products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
